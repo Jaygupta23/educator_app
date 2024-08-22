@@ -25,6 +25,7 @@ class _VideoScreenState extends State<VideoScreen> {
     super.initState();
     // _fetchSessionId();
     _fetchVideoUrls();
+    print(apiKey);
     _pageController.addListener(_pageListener);
   }
 
@@ -70,6 +71,8 @@ class _VideoScreenState extends State<VideoScreen> {
         setState(
           () {
             if (isLoadMore) {
+              print(apiKey);
+
               videoUrls.addAll(List<String>.from(mapResponse['data'].map(
                   (video) => "http://$apiKey:8000/media/" + video['path'])));
               isFetchingMore = false;

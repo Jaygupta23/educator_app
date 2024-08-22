@@ -1,11 +1,13 @@
+import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:reelies/models/latestShowsModel.dart';
+import 'package:reelies/models/mostTrendingShowsModel.dart';
 import 'package:reelies/screens/homeScreen/latestShowsScreen.dart';
 import 'package:reelies/screens/homeScreen/trendingVideosScreen.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-
+import 'package:video_player/video_player.dart';
 import '../../utils/appColors.dart';
 import '../../utils/constants.dart';
 import 'notificationScreen.dart';
@@ -27,161 +29,292 @@ class _HomeScreenState extends State<HomeScreen> {
     "Comedy",
     "Horror",
   ];
+  final List<String> imagePaths = [
+    "assets/images/homeBig.png",
+    "assets/images/slide1.png",
+    "assets/images/slide2.png",
+    "assets/images/slide6.png",
+    "assets/images/slide8.png",
+    "assets/images/slide9.png",
+  ];
+
+  final List<String> videoUrls = [
+    "https://videos.pexels.com/video-files/26183148/11937275_1080_1920_30fps.mp4",
+    "https://website-assets.vidyo.ai/SwiperVideo%20-Jacktorr.webm",
+    "https://videos.pexels.com/video-files/17301128/17301128-sd_360_640_30fps.mp4",
+    "https://videos.pexels.com/video-files/26524813/11956374_360_640_25fps.mp4",
+    "https://videos.pexels.com/video-files/20684425/20684425-sd_360_640_30fps.mp4",
+    "https://videos.pexels.com/video-files/20417426/20417426-sd_360_640_30fps.mp4"
+  ];
+
+  List<VideoPlayerController> _controllers = [];
+  int _currentPageIndex = 0;
+  bool _isHolding = false;
+  Timer? _autoSlideTimer;
+
+  // Set the initial index to a large number to simulate infinite looping
+  static const int initialPageIndex = 0;
+  late final PageController _pageController;
+
   List<String> _selectedData =
       []; // initially empty list for selected movie genres
 
 // function to handle selection of movie genres
   _onSelected(bool selected, String data) {
     setState(() {
-      // this is likely within a StatefulWidget's build() method
       if (selected) {
-        // if the genre is selected
-        _selectedData
-            .clear(); // clear the previous selection (only one selection allowed)
-        _selectedData.add(data); // add the selected genre to _selectedData
+        _selectedData.clear(); // only one selection allowed
+        _selectedData.add(data);
       } else {
-        // if the genre is deselected
-        _selectedData.remove(data); // remove it from the selected genres list
+        _selectedData.remove(data);
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    _currentPageIndex = 0;
+    _controllers = videoUrls.map((videoUrl) {
+      return VideoPlayerController.network(videoUrl)
+        ..initialize().then((_) {
+          setState(() {}); // Refresh the widget after initialization
+        });
+    }).toList();
+
+    // Initialize the PageController at a high index
+
+    _pageController =
+        PageController(viewportFraction: 0.85, initialPage: initialPageIndex);
+
+    // Start the auto-slide timer
+    _startAutoSlideTimer();
+  }
+
+  @override
+  void dispose() {
+    for (var controller in _controllers) {
+      controller.dispose();
+    }
+    _autoSlideTimer?.cancel(); // Cancel the timer on dispose
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _startAutoSlideTimer() {
+    _autoSlideTimer?.cancel();
+    _autoSlideTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (!_isHolding) {
+        setState(() {
+          _currentPageIndex = (_currentPageIndex + 1) %
+              imagePaths.length; // Loop index using modulo
+          _pageController.nextPage(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        });
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: AppColors.colorSecondaryDarkest,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(50),
+        child: AppBar(
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            // Changed to center alignment
+            children: [
+              Row(
+                children: [
+                  SizedBox(
+                    width: 5,
+                  ),
+                  Text(
+                    "Reelies",
+                    style: TextStyle(
+                      color: AppColors.colorWhiteMidEmp,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+              IconButton(
+                onPressed: () {
+                  Get.to(const NotificationScreen());
+                },
+                icon: Icon(
+                  Icons.notifications,
+                  size: 26.sp,
+                  color: AppColors.colorWhiteHighEmp,
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.colorSecondaryDarkest,
+        ),
+      ),
       body: SizedBox(
         height: MediaQuery.of(context).size.height,
         width: MediaQuery.of(context).size.width,
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Container with background image and some text
-              Container(
-                height: 460.h,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage("assets/images/homeBig.png"),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Notification icon
-                    Padding(
-                      padding: const EdgeInsets.only(top: 35),
-                      child: Align(
-                        alignment: Alignment.topRight,
-                        child: IconButton(
-                            onPressed: () {
-                              Get.to(const NotificationScreen());
-                            },
-                            icon: Icon(
-                              Icons.notifications,
-                              size: 26.sp,
-                              color: AppColors.colorWhiteHighEmp,
-                            )),
-                      ),
-                    ),
-                    // Title and play button
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Column(
+                children: [
+                  SizedBox(
+                    height: screenHeight * 0.56,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Stack(
                         children: [
-                          // Title
-                          Row(
-                            children: [
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    'The Winter Lake',
-                                    style: TextStyle(
-                                        fontSize: 20.sp,
-                                        color: AppColors.colorWhiteHighEmp,
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                  Text(
-                                    '8 Seasons | Thriller | 2020',
-                                    style: TextStyle(
-                                        fontSize: 12.sp,
-                                        color: AppColors.colorWhiteHighEmp,
-                                        fontWeight: FontWeight.w400),
-                                  )
-                                ],
+                          // Background with dynamic blur effect
+                          Positioned.fill(
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              child: Image.asset(
+                                imagePaths[
+                                    _currentPageIndex % imagePaths.length],
+                                key: ValueKey<String>(imagePaths[
+                                    _currentPageIndex % imagePaths.length]),
+                                fit: BoxFit.cover,
+                                color: Colors.black.withOpacity(0.5),
+                                colorBlendMode: BlendMode.darken,
                               ),
-                              SizedBox(width: 10.w),
-                              // Play button
-                              MaterialButton(
-                                onPressed: () {},
-                                height: 45.h,
-                                padding: const EdgeInsets.all(0),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Ink(
-                                  decoration: BoxDecoration(
-                                    color: AppColors.colorSecondaryLight,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: SizedBox(
-                                    height: 42.h,
-                                    width: 104.w,
-                                    child: Center(
-                                        child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.play_circle_outline,
-                                          color: AppColors.colorWhiteHighEmp,
-                                        ),
-                                        SizedBox(width: 8.w),
-                                        Text(
-                                          'Play',
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16.sp,
-                                              fontWeight: FontWeight.w400),
-                                        ),
-                                      ],
-                                    )),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          // Playlist icon
-                          Container(
-                            height: 42.h,
-                            width: 40.w,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                  width: 1, color: AppColors.colorWhiteHighEmp),
                             ),
-                            child: const Icon(
-                              Icons.playlist_add,
-                              color: AppColors.colorWhiteHighEmp,
+                          ),
+                          Positioned.fill(
+                            child: BackdropFilter(
+                              filter:
+                                  ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                              child: Container(color: Colors.transparent),
+                            ),
+                          ),
+                          // Carousel slider with GestureDetector for hold functionality
+                          Align(
+                            alignment: Alignment.center,
+                            child: GestureDetector(
+                              onLongPress: () {
+                                setState(() {
+                                  _isHolding = true;
+                                  _controllers[_currentPageIndex %
+                                          _controllers.length]
+                                      .play();
+                                });
+                              },
+                              onLongPressUp: () {
+                                setState(() {
+                                  _isHolding = false;
+                                  _controllers[_currentPageIndex %
+                                          _controllers.length]
+                                      .pause();
+                                  _startAutoSlideTimer(); // Restart auto-slide after release
+                                });
+                              },
+                              child: PageView.builder(
+                                controller: _pageController,
+                                onPageChanged: (index) {
+                                  setState(() {
+                                    _currentPageIndex =
+                                        index % imagePaths.length;
+                                  });
+                                },
+                                itemBuilder: (context, index) {
+                                  final actualIndex = index % imagePaths.length;
+                                  final isCurrentPage =
+                                      (index % imagePaths.length) ==
+                                          _currentPageIndex;
+
+                                  return Transform.scale(
+                                    scale: isCurrentPage ? 1 : 0.9,
+                                    child: AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 300),
+                                      decoration: BoxDecoration(
+                                        color: Colors.transparent,
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: isCurrentPage
+                                            ? [
+                                                BoxShadow(
+                                                    blurRadius: 10,
+                                                    color: AppColors
+                                                        .colorSecondaryDarkest,
+                                                    spreadRadius: 5)
+                                              ]
+                                            : [],
+                                      ),
+                                      child: Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 3.0),
+                                        child: ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          child: _isHolding && isCurrentPage
+                                              ? (_controllers[_currentPageIndex]
+                                                      .value
+                                                      .isInitialized
+                                                  ? AspectRatio(
+                                                      aspectRatio: _controllers[
+                                                              _currentPageIndex]
+                                                          .value
+                                                          .aspectRatio,
+                                                      child: VideoPlayer(
+                                                          _controllers[
+                                                              _currentPageIndex]),
+                                                    )
+                                                  : Container(
+                                                      color: Colors.black))
+                                              : Image.asset(
+                                                  imagePaths[actualIndex],
+                                                  fit: BoxFit.cover,
+                                                ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Add spacing between image and indicator
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      imagePaths.length,
+                      (index) => Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                        width: 15.0,
+                        height: 4.0,
+                        decoration: BoxDecoration(
+                          color: _currentPageIndex % imagePaths.length == index
+                              ? Colors.white
+                              : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Notification icon moved to an AppBar-style layout
+                ],
               ),
-
-              // Create a row with a title and a "show all" button
+              // Title and "Show all" button for Latest Shows
               Padding(
                 padding: const EdgeInsets.only(left: 16, top: 14, right: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Title text for "Latest Shows"
                     Text(
                       'Latest Shows',
                       style: TextStyle(
@@ -190,7 +323,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    // "Show all" button that navigates to LatestShowsScreen on tap
                     InkWell(
                       onTap: () {
                         Navigator.push(
@@ -211,91 +343,79 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-
+              // Movie genres FilterChips
               SingleChildScrollView(
-                // A widget that allows its child to scroll horizontally
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    SizedBox(width: 16.w), // A box with a fixed width
+                    SizedBox(width: 16.w),
                     Wrap(
-                      spacing:
-                          5, // The amount of spacing between chips horizontally
-                      runSpacing:
-                          3, // The amount of spacing between chips vertically
+                      spacing: 5,
+                      runSpacing: 3,
                       children: _data.map((data) {
-                        // Map each item in _data to a FilterChip widget
                         return FilterChip(
                           showCheckmark: false,
-                          // Whether to show a checkmark when selected
                           backgroundColor: AppColors.colorSecondaryDarkest,
-                          // The background color of the chip
                           label: Text(
                             data,
                             style: const TextStyle(
-                                color: AppColors
-                                    .colorWhiteHighEmp), // The label text of the chip
+                                color: AppColors.colorWhiteHighEmp),
                           ),
                           shape: const StadiumBorder(
                               side: BorderSide(color: AppColors.colorPrimary)),
-                          // The border shape of the chip
                           selected: _selectedData.contains(data),
-                          // Whether the chip is selected
                           selectedColor: AppColors.colorPrimary,
-                          // The background color of the chip when selected
                           padding: const EdgeInsets.all(5),
-                          // The padding of the chip
-                          onSelected: (selected) => _onSelected(selected,
-                              data), // The callback function when the chip is selected/deselected
+                          onSelected: (selected) => _onSelected(selected, data),
                         );
-                      }).toList(), // Convert the mapped FilterChip widgets to a list
+                      }).toList(),
                     ),
-                    SizedBox(width: 16.w), // A box with a fixed width
+                    SizedBox(width: 16.w),
                   ],
                 ),
               ),
-
               const LatestShowsModel(),
-              // Creates a Padding widget with specific padding and a Row widget as a child
               Padding(
                 padding: const EdgeInsets.only(left: 16, top: 14, right: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-// Displays the "trendingNow" text using a Text widget with a specific style
                     Text(
                       trendingNow,
                       style: TextStyle(
-                          fontSize: 16.sp,
-                          color: AppColors.colorPrimary,
-                          fontWeight: FontWeight.w600),
+                        fontSize: 16.sp,
+                        color: AppColors.colorPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-// Displays the "Show all" text using an InkWell widget that navigates to the TrendingVideosScreen on tap
                     InkWell(
                       onTap: () {
                         Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    const TrendingVideosScreen()));
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  const TrendingVideosScreen()),
+                        );
                       },
                       child: Text(
                         'Show all',
                         style: TextStyle(
-                            fontSize: 12.sp,
-                            color: AppColors.colorWhiteHighEmp,
-                            fontWeight: FontWeight.w400),
+                          fontSize: 12.sp,
+                          color: AppColors.colorWhiteHighEmp,
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
-              const LatestShowsModel(),
+              const MostTrendingShowsModel(),
               SizedBox(height: 20.h),
             ],
           ),
         ),
       ),
     );
+    ;
   }
 }

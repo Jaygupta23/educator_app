@@ -6,6 +6,7 @@ import 'package:reelies/screens/myListScreen.dart';
 import 'package:reelies/screens/homeScreen/homeScreen.dart';
 import 'package:reelies/screens/reels/VideoScreen.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:reelies/screens/walletScreens/watchAds.dart';
 import '../screens/profileScreen/profileScreen.dart';
 import '../screens/searchScreen/searchScreen.dart';
 import '../utils/appColors.dart';
@@ -20,13 +21,14 @@ class MyBottomNavModel extends StatefulWidget {
 
 // Define the state of the bottom navigation model
 class _MyBottomNavModelState extends State<MyBottomNavModel> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
   static const List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
     // DownloadScreen(),
     VideoScreen(),
     SearchScreen(),
-    MyListScreen(),
+    // MyListScreen(),
+    WatchAds(),
     ProfileScreen()
   ];
 
@@ -79,7 +81,7 @@ class _MyBottomNavModelState extends State<MyBottomNavModel> {
                   text: 'Search',
                 ),
                 GButton(
-                  icon: Icons.wallet_rounded,
+                  icon: Icons.wallet_giftcard_rounded,
                   text: 'Wallet',
                 ),
                 GButton(

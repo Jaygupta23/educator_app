@@ -5,90 +5,87 @@ import 'package:get/get.dart';
 import '../screens/movieDetailsScreen.dart';
 import '../utils/appColors.dart';
 
-class Show {
-  final String imagePath;
-  final String title;
-
-  Show({required this.imagePath, required this.title});
-}
-
 class MostTrendingShowsModel extends StatelessWidget {
-  // List of shows
-  final List<Show> shows = [
-    Show(imagePath: 'assets/images/Image.png', title: 'Pushpa returns back'),
-    Show(
-        imagePath: 'assets/images/Image-2.png',
-        title: 'Agilan thriller scne part should have not'),
-    Show(imagePath: 'assets/images/Image-1.png', title: 'Action movies hub'),
-    Show(imagePath: 'assets/images/Image.png', title: 'Pushpa returns'),
-    Show(imagePath: 'assets/images/Image-2.png', title: 'Agilan returns'),
-    Show(imagePath: 'assets/images/Image-1.png', title: 'Action returns'),
-    Show(imagePath: 'assets/images/Image.png', title: 'Pushpa returns'),
-    Show(
-        imagePath: 'assets/images/Image-2.png',
-        title: 'Agilan thriller scne part should have not'),
-    Show(imagePath: 'assets/images/Image-1.png', title: 'Action movies hub'),
-  ];
-
-  MostTrendingShowsModel({Key? key}) : super(key: key);
+  const MostTrendingShowsModel({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // List of items with image paths and titles
+    final items = [
+      {'image': 'assets/images/Image.png', 'title': 'Pushpa'},
+      {'image': 'assets/images/Image-2.png', 'title': 'Agilan'},
+      {'image': 'assets/images/Image-1.png', 'title': 'Action'},
+      {'image': 'assets/images/Image.png', 'title': 'Pushpa'},
+    ];
+
     return Container(
-      margin: const EdgeInsets.only(top: 15, left: 20),
-      height: 270.h,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        child: Wrap(
-          direction: Axis.vertical,
-          children: List.generate(
-            shows.length,
-            (index) {
-              final show = shows[index];
-              return SizedBox(
-                height: (270.h) / 3,
-                // Divides the height by 3 for three items in a column
-                width: 200.w,
-                // Fixed width for each item
-                child: GestureDetector(
-                  onTap: () {
-                    Get.to(const MovieDetailsScreen());
-                  },
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8.0),
-                        child: Image.asset(
-                          show.imagePath,
-                          height: 80.h,
-                          width: 70.w,
-                          fit: BoxFit.fitHeight,
+      margin: const EdgeInsets.only(top: 10, bottom: 10),
+      child: SizedBox(
+        height: 125.h, // Adjust height as needed
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+            return GestureDetector(
+              onTap: () {
+                Get.to(const MovieDetailsScreen());
+              },
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: index == 0 ? 16 : 10.w,
+                  right: index == items.length - 1 ? 16 : 0,
+                ),
+                child: Stack(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Image.asset(
+                          item['image']!,
+                          height: 105.h,
+                          width: 100.w,
+                        ),
+                        Text(
+                          item['title']!,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.colorWhiteHighEmp,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Positioned(
+                      bottom: 27.h,
+                      right: 0.w,
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            bottomRight: Radius.circular(10)),
+                        child: Container(
+                          height: 32.h,
+                          width: 30.w,
+                          color: Colors.blueGrey.withOpacity(0.7),
+                          child: Center(
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24.sp,
+                                  fontWeight: FontWeight.bold,
+                                  fontStyle: FontStyle.italic),
+                            ),
+                          ),
                         ),
                       ),
-                      SizedBox(height: 5.h),
-                      Padding(
-                          padding: const EdgeInsets.only(top: 4.0, left: 10),
-                          child: Container(
-                            width: 110.w, // Set the fixed width here
-                            child: Text(
-                              show.title,
-                              style: TextStyle(
-                                  fontSize: 12.sp, color: Colors.white),
-                              softWrap: true,
-                              maxLines: 2,
-                              // Ensures the text wraps within the width
-                              overflow: TextOverflow.ellipsis,
-                              // Handle overflow if needed
-                            ),
-                          )),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
