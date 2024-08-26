@@ -132,21 +132,22 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             // Changed to center alignment
             children: [
-              Row(
-                children: [
-                  SizedBox(
-                    width: 5,
+              Row(children: [
+                SizedBox(
+                  width: 5,
+                ),
+                Container(
+                  width: 150,
+                  height: 100,
+                  padding: EdgeInsets.only(
+                    top: 15,
                   ),
-                  Text(
-                    "Reelies",
-                    style: TextStyle(
-                      color: AppColors.colorWhiteMidEmp,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  child: Image.asset(
+                    "assets/images/1.png",
+                    fit: BoxFit.cover,
                   ),
-                ],
-              ),
+                ),
+              ]),
               IconButton(
                 onPressed: () {
                   Get.to(const NotificationScreen());
