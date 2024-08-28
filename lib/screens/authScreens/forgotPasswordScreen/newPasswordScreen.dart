@@ -4,7 +4,6 @@ import 'package:reelies/models/myBottomNavModel.dart';
 import 'package:reelies/models/rememberMeModel.dart';
 import 'package:reelies/utils/myButton.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 
 import '../../../utils/appColors.dart';
 

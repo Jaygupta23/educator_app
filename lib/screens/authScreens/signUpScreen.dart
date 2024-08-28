@@ -4,9 +4,9 @@ import 'package:reelies/models/myBottomNavModel.dart';
 import 'package:reelies/models/rememberMeModel.dart';
 import 'package:reelies/screens/authScreens/signInScreen.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
+import 'package:reelies/screens/onboardingScreen/genreScreen.dart';
 
-import 'dart:math' as math;
+
 
 import '../../utils/appColors.dart';
 import '../../utils/constants.dart';
@@ -74,8 +74,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         borderRadius: BorderRadius.circular(8)),
                     width: 296.w, // width of container
                     child: TextFormField(
-                      controller:
-                          emailController, // Controller for email input field
+                      controller: emailController,
+                      // Controller for email input field
                       validator: (value) {
                         bool emailValid = RegExp(
                                 r"^WS{1,2}:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:56789")
@@ -87,20 +87,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         }
                         return null;
                       },
-                      style: const TextStyle(
-                          color: AppColors
-                              .colorDisabled), // Style for the text entered in the field
+                      style: const TextStyle(color: AppColors.colorDisabled),
+                      // Style for the text entered in the field
                       decoration: InputDecoration(
                         hintText: 'Email Address',
-                        hintStyle: const TextStyle(
-                            color: AppColors
-                                .colorDisabled), // Style for the hint text
+                        hintStyle:
+                            const TextStyle(color: AppColors.colorDisabled),
+                        // Style for the hint text
                         prefixIcon: const Icon(
                           Icons.send_rounded,
                           color: AppColors.colorDisabled, // Color for the icon
                         ),
-                        contentPadding: const EdgeInsets.fromLTRB(
-                            10, 16, 8, 16), // Padding for the content
+                        contentPadding:
+                            const EdgeInsets.fromLTRB(10, 16, 8, 16),
+                        // Padding for the content
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(
                               8), // Border radius of the input field
@@ -110,28 +110,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                              8), // Border radius of the input field when it is focused
+                          borderRadius: BorderRadius.circular(8),
+                          // Border radius of the input field when it is focused
                           borderSide: const BorderSide(
                             color: AppColors.colorGrey,
                             width: 1,
                           ),
                         ),
                         errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                              8), // Border radius of the input field when there is an error
+                          borderRadius: BorderRadius.circular(8),
+                          // Border radius of the input field when there is an error
                           borderSide: const BorderSide(
-                            color: AppColors
-                                .colorError, // Border color when there is an error
+                            color: AppColors.colorError,
+                            // Border color when there is an error
                             width: 1,
                           ),
                         ),
                         focusedErrorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                              8), // Border radius of the input field when there is an error and it is focused
+                          borderRadius: BorderRadius.circular(8),
+                          // Border radius of the input field when there is an error and it is focused
                           borderSide: const BorderSide(
-                            color: AppColors
-                                .colorError, // Border color when there is an error and it is focused
+                            color: AppColors.colorError,
+                            // Border color when there is an error and it is focused
                             width: 1,
                           ),
                         ),
@@ -150,9 +150,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         borderRadius: BorderRadius.circular(
                             8)), // rounded corners of the container
                     child: TextFormField(
-                      obscureText: obscureText, // hides the entered text
-                      controller:
-                          passwordController, // controller for the TextFormField
+                      obscureText: obscureText,
+                      // hides the entered text
+                      controller: passwordController,
+                      // controller for the TextFormField
                       validator: (value) {
                         // validation function for the TextFormField
                         if (value!.isEmpty) {
@@ -160,21 +161,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         } else if (passwordController.text.length < 6) {
                           return "Password length should be more than 6 characters"; // error message when password is less than 6 characters long
                         }
+                        return null;
                       },
-                      style: const TextStyle(
-                          color: AppColors
-                              .colorDisabled), // text style of the entered text
+                      style: const TextStyle(color: AppColors.colorDisabled),
+                      // text style of the entered text
                       decoration: InputDecoration(
                         prefixIcon: const Icon(
                           Icons.lock,
                           color:
                               AppColors.colorDisabled, // color of the lock icon
                         ),
-                        hintText:
-                            'Enter Password', // hint text for the TextFormField
-                        hintStyle: const TextStyle(
-                            color: AppColors
-                                .colorDisabled), // style for the hint text
+                        hintText: 'Enter Password',
+                        // hint text for the TextFormField
+                        hintStyle:
+                            const TextStyle(color: AppColors.colorDisabled),
+                        // style for the hint text
                         suffixIcon: GestureDetector(
                           onTap: () {
                             setState(() {
@@ -190,8 +191,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   color: AppColors.colorPrimary,
                                   size: 20), // eye icon to show the password
                         ),
-                        contentPadding: const EdgeInsets.fromLTRB(
-                            10, 16, -12, 16), // padding for the entered text
+                        contentPadding:
+                            const EdgeInsets.fromLTRB(10, 16, -12, 16),
+                        // padding for the entered text
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(
                               8), // rounded corners of the enabled border
@@ -223,8 +225,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(
                               8), // rounded corners of the focused error border
                           borderSide: const BorderSide(
-                            color: AppColors
-                                .colorError, // color of the focused error border
+                            color: AppColors.colorError,
+                            // color of the focused error border
                             width: 1, // width of the focused error border
                           ),
                         ),
@@ -249,6 +251,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         } else if (passwordController2.text.length < 6) {
                           return "Password length should be more than 6 characters";
                         }
+                        return null;
                       },
                       style: const TextStyle(color: AppColors.colorDisabled),
                       decoration: InputDecoration(
@@ -326,7 +329,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           emailController.clear();
                           passwordController.clear();
                           // Navigate to the MyBottomNavModel screen
-                          Get.offAll(() => const MyBottomNavModel());
+                          Get.offAll(() => GenreScreen());
                         }
                       },
                       text: "CREATE ACCOUNT"),

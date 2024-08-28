@@ -5,9 +5,7 @@ import 'package:reelies/models/rememberMeModel.dart';
 import 'package:reelies/screens/authScreens/signUpScreen.dart';
 import 'package:reelies/screens/interestScreen.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 
-import 'dart:math' as math;
 
 import '../../utils/appColors.dart';
 import '../../utils/constants.dart';
@@ -163,6 +161,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         } else if (passwordController.text.length < 6) {
                           return "Password length should be more than 6 characters";
                         }
+                        return null;
                       },
                       // Set the style of the text being entered to disabled color
                       style: const TextStyle(color: AppColors.colorDisabled),

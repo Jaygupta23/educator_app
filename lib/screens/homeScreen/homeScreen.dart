@@ -129,16 +129,14 @@ class _HomeScreenState extends State<HomeScreen> {
         child: AppBar(
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
             // Changed to center alignment
             children: [
               Row(children: [
-                SizedBox(
-                  width: 5,
-                ),
+
                 Container(
                   width: 150,
                   height: 100,
+                  color: Colors.red,
                   padding: EdgeInsets.only(
                     top: 15,
                   ),

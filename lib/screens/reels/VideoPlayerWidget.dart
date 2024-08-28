@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:reelies/screens/reels/components/ListModals.dart';
 import 'package:reelies/screens/reels/VideoListScreen.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';

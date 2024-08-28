@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:reelies/screens/authScreens/mainSignInScreen.dart';
 import 'package:reelies/screens/profileScreen/downloadScreenProfile.dart';
@@ -9,7 +8,6 @@ import 'package:reelies/screens/profileScreen/privacyPolicyScreen.dart';
 import 'package:reelies/screens/profileScreen/securityScreenProfile.dart';
 import 'package:reelies/screens/profileScreen/subToPremiumScreen.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import '../../utils/appColors.dart';
 import 'editProfileScreen.dart';
 import 'helpCenterScreen.dart';

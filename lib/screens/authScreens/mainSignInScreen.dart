@@ -4,7 +4,6 @@ import 'package:reelies/models/myBottomNavModel.dart';
 import 'package:reelies/screens/authScreens/signInScreen.dart';
 import 'package:reelies/screens/authScreens/signUpScreen.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 
 import '../../utils/appColors.dart';
 import '../../utils/constants.dart';

@@ -231,9 +231,9 @@ class _SecurityScreenProfileState extends State<SecurityScreenProfile> {
                     //         builder: (context) => ProfileScreen()));
                   },
                   style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(
+                    backgroundColor: WidgetStateProperty.all<Color>(
                         AppColors.colorWhiteHighEmp),
-                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                    shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                       RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -262,9 +262,9 @@ class _SecurityScreenProfileState extends State<SecurityScreenProfile> {
                     //         builder: (context) => ProfileScreen()));
                   },
                   style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(
+                    backgroundColor: WidgetStateProperty.all<Color>(
                         AppColors.colorPrimary),
-                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                    shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                       RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
