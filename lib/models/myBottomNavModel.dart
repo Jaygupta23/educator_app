@@ -19,7 +19,7 @@ class MyBottomNavModel extends StatefulWidget {
 
 // Define the state of the bottom navigation model
 class _MyBottomNavModelState extends State<MyBottomNavModel> {
-  int _selectedIndex = 1;
+  int _selectedIndex = 0;
   static const List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
     // DownloadScreen(),

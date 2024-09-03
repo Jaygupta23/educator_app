@@ -7,6 +7,7 @@ import 'package:reelies/models/mostTrendingShowsModel.dart';
 import 'package:reelies/screens/homeScreen/latestShowsScreen.dart';
 import 'package:reelies/screens/homeScreen/trendingVideosScreen.dart';
 import 'package:get/get.dart';
+import 'package:reelies/screens/reels/VideoScreen.dart';
 import 'package:video_player/video_player.dart';
 import '../../utils/appColors.dart';
 import '../../utils/constants.dart';
@@ -132,11 +133,9 @@ class _HomeScreenState extends State<HomeScreen> {
             // Changed to center alignment
             children: [
               Row(children: [
-
                 Container(
                   width: 150,
                   height: 100,
-                  color: Colors.red,
                   padding: EdgeInsets.only(
                     top: 15,
                   ),
@@ -208,6 +207,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                           _controllers.length]
                                       .play();
                                 });
+                              },
+                              onTap: () {
+                                Get.to(const VideoScreen());
+                                print("hello");
                               },
                               onLongPressUp: () {
                                 setState(() {

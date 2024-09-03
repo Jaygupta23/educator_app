@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:get/get.dart';
 import 'package:reelies/models/myBottomNavModel.dart';
 import 'package:reelies/utils/appColors.dart';
 
@@ -33,7 +34,7 @@ class _GenreScreenState extends State<GenreScreen>
   List<bool> _isBalloonVisible =
       List.generate(genreItems.length, (index) => true);
   List<double> _balloonSizes =
-      List.generate(genreItems.length, (index) => 120.0);
+      List.generate(genreItems.length, (index) => 80.0);
   List<bool> _isExploding = List.generate(genreItems.length, (index) => false);
   List<AnimationController?> _controllers = [];
   List<Animation<double>?> _animations = [];
@@ -69,7 +70,7 @@ class _GenreScreenState extends State<GenreScreen>
             false; // Remove the balloon from the visible list
       });
 
-      if (_selectedGenres.length >= 3) {
+      if (_selectedGenres.length == 3) {
         _showSelectedGenresDialog(); // Show modal if at least 3 genres are selected
       }
     });
@@ -86,8 +87,8 @@ class _GenreScreenState extends State<GenreScreen>
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return WillPopScope(
-              onWillPop: () async =>
-                  !allGenresSelected, // Prevent back button if all genres are selected
+              onWillPop: () async => !allGenresSelected,
+              // Prevent back button if all genres are selected
               child: Container(
                 padding: EdgeInsets.all(20.0),
                 decoration: BoxDecoration(
@@ -197,11 +198,7 @@ class _GenreScreenState extends State<GenreScreen>
                         Center(
                           child: ElevatedButton(
                             onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => MyBottomNavModel()),
-                              );
+                              Get.offAll(const MyBottomNavModel());
                             },
                             style: ElevatedButton.styleFrom(
                                 elevation: 5,
@@ -244,162 +241,199 @@ class _GenreScreenState extends State<GenreScreen>
     return Scaffold(
       backgroundColor: AppColors.colorSecondaryDarkest,
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(0),
+        preferredSize: Size.fromHeight(80),
         child: AppBar(
           backgroundColor: AppColors.colorSecondaryDarkest,
-        ),
-      ),
-      body: Column(
-        children: [
-          SizedBox(
-            height: 40,
-          ),
-          Center(
-            child: Text(
-              'Select Genres',
-              style: TextStyle(
+          centerTitle: true,
+          flexibleSpace: Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              // Adjust the padding as needed
+              child: Text(
+                'Select Genres',
+                style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.colorWhiteHighEmp),
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
-          SizedBox(
-            height: 30,
-          ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final balloonSize = constraints.maxWidth * 0.35;
-                final random = Random();
+        ),
+      ),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final balloonSize = constraints.maxWidth * 0.27;
+                    final padding = constraints.maxWidth * 0.02;
+                    final random = Random();
 
-                return GridView.builder(
-                  padding: const EdgeInsets.all(16.0),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16.0,
-                    mainAxisSpacing: 16.0,
-                    childAspectRatio: 0.8,
-                  ),
-                  itemCount: _isBalloonVisible.where((visible) => visible).length,
-                  itemBuilder: (context, visibleIndex) {
-                    int actualIndex = -1;
-                    int count = -1;
+                    return Padding(
+                      padding: EdgeInsets.all(padding),
+                      child: GridView.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: padding,
+                          mainAxisSpacing: padding,
+                          childAspectRatio: 0.8,
+                        ),
+                        itemCount: _isBalloonVisible
+                            .where((visible) => visible)
+                            .length,
+                        itemBuilder: (context, visibleIndex) {
+                          int actualIndex = -1;
+                          int count = -1;
 
-                    for (int i = 0; i < _isBalloonVisible.length; i++) {
-                      if (_isBalloonVisible[i]) {
-                        count++;
-                      }
-                      if (count == visibleIndex) {
-                        actualIndex = i;
-                        break;
-                      }
-                    }
+                          for (int i = 0; i < _isBalloonVisible.length; i++) {
+                            if (_isBalloonVisible[i]) {
+                              count++;
+                            }
+                            if (count == visibleIndex) {
+                              actualIndex = i;
+                              break;
+                            }
+                          }
 
-                    if (actualIndex == -1 || !_isBalloonVisible[actualIndex]) {
-                      return SizedBox.shrink();
-                    }
+                          if (actualIndex == -1 ||
+                              !_isBalloonVisible[actualIndex]) {
+                            return SizedBox.shrink();
+                          }
 
-                    final genreItem = genreItems[actualIndex];
+                          final genreItem = genreItems[actualIndex];
 
-                    // Generate a random duration and delay for each container
-                    final int duration = random.nextInt(700) + 300; // 300ms to 1000ms
+                          final int duration = random.nextInt(700) + 300;
 
-                    // Create an AnimationController with random duration
-                    AnimationController _shakeController = AnimationController(
-                      duration: Duration(milliseconds: duration),
-                      vsync: this,
-                    );
+                          AnimationController _shakeController =
+                              AnimationController(
+                            duration: Duration(milliseconds: duration),
+                            vsync: this,
+                          );
 
-                    // Create a Tween for the vertical shaking effect (y-axis)
-                    Animation<double> _shakeAnimation = Tween(begin: -15.0, end: 10.0)
-                        .chain(CurveTween(curve: Curves.easeIn))
-                        .animate(_shakeController);
+                          Animation<double> _shakeAnimation =
+                              Tween(begin: 20.0, end: 0.0)
+                                  .chain(CurveTween(curve: Curves.easeInOut))
+                                  .animate(_shakeController);
 
-                    // Start the animation with a random delay
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      Future.delayed(Duration(milliseconds: random.nextInt(500)), () {
-                        if (mounted) {
-                          _shakeController.repeat(reverse: true);
-                        }
-                      });
-                    });
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            Future.delayed(
+                                Duration(milliseconds: random.nextInt(500)),
+                                () {
+                              if (mounted) {
+                                _shakeController.repeat(reverse: true);
+                              }
+                            });
+                          });
 
-                    return GestureDetector(
-                      onTap: () {
-                        _popBalloon(actualIndex);
-                      },
-                      child: Column(
-                        children: [
-                          AnimatedOpacity(
-                            duration: Duration(milliseconds: 300),
-                            opacity: _isExploding[actualIndex] ? 0.0 : 1.0,
-                            child: AnimatedBuilder(
-                              animation: _shakeAnimation,
-                              builder: (context, child) {
-                                return Transform.translate(
-                                  offset: Offset(0, _shakeAnimation.value), // Vertical movement
-                                  child: child,
-                                );
-                              },
-                              child: AnimatedContainer(
-                                duration: Duration(milliseconds: 300),
-                                width: balloonSize,
-                                height: balloonSize * 1.25,
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    // Image.asset(
-                                    //   'assets/images/balloon.png',
-                                    //   fit: BoxFit.cover,
-                                    //   width: balloonSize,
-                                    //   height: balloonSize * 1.25,
-                                    // ),
-                                    Positioned(
-                                      top: -0.8,
-                                      left: -1,
-                                      right: -1,
-                                      child: ClipOval(
-                                        child: Image.asset(
-                                          genreItem.imagePath,
-                                          fit: BoxFit.cover,
-                                          width: balloonSize,
-                                          height: balloonSize * 1.25,
-                                        ),
+                          return GestureDetector(
+                            onTap: () {
+                              _popBalloon(actualIndex);
+                            },
+                            child: Column(
+                              children: [
+                                AnimatedOpacity(
+                                  duration: Duration(milliseconds: 300),
+                                  opacity:
+                                      _isExploding[actualIndex] ? 0.0 : 1.0,
+                                  child: AnimatedBuilder(
+                                    animation: _shakeAnimation,
+                                    builder: (context, child) {
+                                      return Transform.translate(
+                                        offset:
+                                            Offset(0, _shakeAnimation.value),
+                                        child: child,
+                                      );
+                                    },
+                                    child: AnimatedContainer(
+                                      duration: Duration(milliseconds: 300),
+                                      width: balloonSize * 1.1,
+                                      height: balloonSize * 2.1,
+                                      child: Stack(
+                                        alignment: Alignment.center,
+                                        children: [
+                                          Positioned(
+                                            top: -0.8,
+                                            left: -1,
+                                            right: -1,
+                                            child: ClipOval(
+                                              child: Image.asset(
+                                                genreItem.imagePath,
+                                                fit: BoxFit.cover,
+                                                width: balloonSize * 1.1,
+                                                height: balloonSize * 1.7,
+                                              ),
+                                            ),
+                                          ),
+                                          if (_isExploding[actualIndex])
+                                            ScaleTransition(
+                                              scale: _animations[actualIndex]!,
+                                              child: ClipOval(
+                                                child: Image.asset(
+                                                  'assets/images/burst1.png',
+                                                  fit: BoxFit.cover,
+                                                  width: balloonSize * 1.1,
+                                                  height: balloonSize * 1.7,
+                                                ),
+                                              ),
+                                            ),
+                                          Positioned(
+                                            bottom: 20,
+                                            child: Text(
+                                              genreItem.title,
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    if (_isExploding[actualIndex])
-                                      ScaleTransition(
-                                        scale: _animations[actualIndex]!,
-                                        child: ClipOval(
-                                          child: Image.asset(
-                                            'assets/images/burst1.png',
-                                            fit: BoxFit.cover,
-                                            width: balloonSize,
-                                            height: balloonSize * 1.25,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            genreItem.title,
-                            style: TextStyle(
-                                fontSize: 16,
-                                color: AppColors.colorWhiteHighEmp,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                          );
+                        },
                       ),
                     );
                   },
-                );
-              },
+                ),
+              ),
+            ],
+          ),
+          if (_selectedGenres.length >= 1)
+            Positioned(
+              bottom: 30,
+              right: 10,
+              child: GestureDetector(
+                onTap: _showSelectedGenresDialog,
+                child: Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.colorError,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.queue,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ),
             ),
-          )
         ],
       ),
     );
