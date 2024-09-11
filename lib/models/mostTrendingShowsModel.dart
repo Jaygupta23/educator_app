@@ -28,9 +28,9 @@ class MostTrendingShowsModel extends StatelessWidget {
           itemCount: items.length,
           itemBuilder: (context, index) {
             final item = items[index];
-            return GestureDetector(
+            return InkWell(
               onTap: () {
-                Get.to(const MovieDetailsScreen());
+                // Get.to(const MovieDetailsScreen());
               },
               child: Padding(
                 padding: EdgeInsets.only(

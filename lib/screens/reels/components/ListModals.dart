@@ -77,7 +77,7 @@ class ListModals extends StatelessWidget {
           const Row(
             children: [
               Text(
-                "0 - 19",
+                "0 - 29",
                 style: TextStyle(color: Colors.white),
               )
             ],

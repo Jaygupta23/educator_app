@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 
 import '../../utils/appColors.dart';
 
@@ -17,12 +18,23 @@ class LanguageScreenProfile extends StatefulWidget {
 class _LanguageScreenProfileState extends State<LanguageScreenProfile> {
   late SingingCharacter? _character = SingingCharacter.us;
   late LanguageCharacter? _character2 = LanguageCharacter.bangla;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.colorSecondaryDarkest,
       appBar: AppBar(
-        title: const Text('Language'),
+        title: const Text(
+          'Language',
+          style: TextStyle(color: AppColors.colorSecondaryLight),
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          color: AppColors.colorSecondaryLight,
+          onPressed: () {
+            Get.back(); // This will navigate back using GetX
+          },
+        ),
         backgroundColor: AppColors.colorSecondaryDarkest,
         elevation: 0,
       ),

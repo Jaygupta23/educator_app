@@ -15,6 +15,7 @@ class _WatchAdsState extends State<WatchAds> {
 
   @override
   Widget build(BuildContext context) {
+    int? activeBuyMintsIndex = -1;
     final List<Map<String, dynamic>> rewards = [
       {
         "icon": Icons.live_tv_rounded,
@@ -65,11 +66,11 @@ class _WatchAdsState extends State<WatchAds> {
     ];
 
     final List<Map<String, dynamic>> buyMins = [
-      {"mins": "+10 mins", "price": "Rs 10"},
-      {"mins": "+20 mins", "price": "Rs 20"},
-      {"mins": "+30 mins", "price": "Rs 30"},
-      {"mins": "+40 mins", "price": "Rs 50"},
-      {"mins": "+50 mins", "price": "Rs 50"},
+      {"mins": "+10 mins", "price": "INR 10"},
+      {"mins": "+20 mins", "price": "INR 20"},
+      {"mins": "+30 mins", "price": "INR 30"},
+      {"mins": "+40 mins", "price": "INR 50"},
+      {"mins": "+50 mins", "price": "INR 50"},
     ];
 
     return Scaffold(
@@ -87,29 +88,29 @@ class _WatchAdsState extends State<WatchAds> {
               Stack(
                 children: [
                   SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.38,
+                    height: MediaQuery.of(context).size.height * 0.45,
                     width: double.infinity,
                     child: Stack(
                       children: [
                         Image.asset(
-                          "assets/images/gift-box.avif",
+                          "assets/images/gift-box.png",
                           fit: BoxFit.cover,
                           width: double.infinity,
-                          height: MediaQuery.of(context).size.height * 0.3,
+                          height: MediaQuery.of(context).size.height * 0.38,
                         ),
                         Container(
                           color:
                               AppColors.colorSecondaryDarkest.withOpacity(0.2),
                         ),
                         Positioned(
-                          top: 10,
-                          left: MediaQuery.of(context).size.width * 0.35,
+                          top: 25,
+                          left: MediaQuery.of(context).size.width * 0.3,
                           child: Center(
                             child: Text(
                               "Earn Rewards",
                               style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 22,
+                                  fontSize: 26,
                                   fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -119,7 +120,7 @@ class _WatchAdsState extends State<WatchAds> {
                   ),
                   // Container that overlaps the image and extends outside
                   Positioned(
-                    top: MediaQuery.of(context).size.height * 0.3 - 55,
+                    top: MediaQuery.of(context).size.height * 0.3,
                     left: MediaQuery.of(context).size.width * 0.5 - 150,
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 20),
@@ -184,18 +185,20 @@ class _WatchAdsState extends State<WatchAds> {
                                         2.5,
                                     width: double.infinity,
                                     decoration: BoxDecoration(
-                                        color: AppColors.colorSecondaryDarkest,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.white38,
-                                            offset: const Offset(5.0, 5.0),
-                                            blurRadius: 10.0,
-                                            spreadRadius: 2.0,
-                                          ),
-                                        ],
-                                        borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(10),
-                                            topRight: Radius.circular(16))),
+                                      color: AppColors.colorSecondaryDarkest,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.white38,
+                                          offset: const Offset(5.0, 5.0),
+                                          blurRadius: 10.0,
+                                          spreadRadius: 2.0,
+                                        ),
+                                      ],
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(16),
+                                      ),
+                                    ),
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Column(
@@ -207,14 +210,13 @@ class _WatchAdsState extends State<WatchAds> {
                                               Text(
                                                 'Buy Mints',
                                                 style: TextStyle(
-                                                    fontSize: 24,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: AppColors
-                                                        .colorWhiteHighEmp),
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: AppColors
+                                                      .colorWhiteHighEmp,
+                                                ),
                                               ),
-                                              SizedBox(
-                                                width: 4,
-                                              ),
+                                              SizedBox(width: 4),
                                               Icon(
                                                 Icons.access_time_filled,
                                                 size: 28,
@@ -231,109 +233,122 @@ class _WatchAdsState extends State<WatchAds> {
                                                   MainAxisAlignment.spaceAround,
                                               children: List.generate(
                                                   buyMins.length, (index) {
-                                                return Card(
-                                                  elevation: 5,
-                                                  margin: EdgeInsets.symmetric(
-                                                      horizontal: 10),
-                                                  shape: RoundedRectangleBorder(
+                                                return GestureDetector(
+                                                  onTap: () {
+                                                    setState(() {
+                                                      activeBuyMintsIndex =
+                                                          index;
+                                                    });
+                                                  },
+                                                  child: Card(
+                                                    elevation: 5,
+                                                    margin:
+                                                        EdgeInsets.symmetric(
+                                                            horizontal: 10),
+                                                    shape:
+                                                        RoundedRectangleBorder(
                                                       borderRadius:
                                                           BorderRadius.circular(
-                                                              8)),
-                                                  child: ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                    child: Stack(
-                                                      children: [
-                                                        Column(
-                                                          children: [
-                                                            SizedBox(
-                                                                height: 50),
-                                                            // Space to avoid overlap with the top-left label
-                                                            Image.asset(
-                                                              "assets/images/coin.webp",
-                                                              width: 120,
-                                                              height: 80,
-                                                            ),
-                                                            SizedBox(
-                                                                height: 50),
-                                                            // Space to avoid overlap with the bottom-right button
-                                                          ],
-                                                        ),
-                                                        Positioned(
-                                                          top: -27,
-                                                          left: -32,
-                                                          child:
-                                                              Transform.rotate(
-                                                            angle: -0.5,
-                                                            // Adjust the tilt angle as needed
-                                                            child: Container(
-                                                              width: 180,
-                                                              height: 40,
-                                                              color: Colors
-                                                                  .redAccent,
-                                                              // Background color for the top-left label
+                                                              8),
+                                                    ),
 
-                                                              child: Padding(
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                        .only(
-                                                                        top:
-                                                                            20.0,
-                                                                        left:
-                                                                            24),
-                                                                child: Text(
-                                                                  buyMins[index]
-                                                                      ["mins"],
-                                                                  style:
-                                                                      TextStyle(
-                                                                    fontSize:
-                                                                        14,
-                                                                    color: Colors
-                                                                        .white,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w800,
+                                                    // Change color based on active index
+                                                    child: ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8),
+                                                      child: Stack(
+                                                        children: [
+                                                          Column(
+                                                            children: [
+                                                              SizedBox(
+                                                                  height: 50),
+                                                              Image.asset(
+                                                                "assets/images/coin.webp",
+                                                                width: 120,
+                                                                height: 80,
+                                                              ),
+                                                              SizedBox(
+                                                                  height: 50),
+                                                            ],
+                                                          ),
+                                                          Positioned(
+                                                            top: -27,
+                                                            left: -32,
+                                                            child: Transform
+                                                                .rotate(
+                                                              angle: -0.5,
+                                                              child: Container(
+                                                                width: 180,
+                                                                height: 40,
+                                                                color: activeBuyMintsIndex ==
+                                                                        index
+                                                                    ? Colors
+                                                                        .green
+                                                                    : Colors
+                                                                        .redAccent,
+                                                                child: Padding(
+                                                                  padding: const EdgeInsets
+                                                                      .only(
+                                                                      top: 20.0,
+                                                                      left: 24),
+                                                                  child: Text(
+                                                                    buyMins[index]
+                                                                        [
+                                                                        "mins"],
+                                                                    style:
+                                                                        TextStyle(
+                                                                      fontSize:
+                                                                          14,
+                                                                      color: Colors
+                                                                          .white,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w800,
+                                                                    ),
                                                                   ),
                                                                 ),
                                                               ),
                                                             ),
                                                           ),
-                                                        ),
-                                                        Positioned(
-                                                          bottom: -20,
-                                                          right: 0,
-                                                          child: Container(
-                                                            height: 60,
-                                                            width: 130,
-                                                            color: Colors
-                                                                .redAccent,
-                                                            // Background color for the top-left label
-                                                            padding:
-                                                                EdgeInsets.only(
-                                                                    top: 10,
-                                                                    left: 50),
-                                                            child: Text(
-                                                              buyMins[index]
-                                                                  ["price"],
-                                                              style: TextStyle(
-                                                                fontSize: 16,
-                                                                color: Colors
-                                                                    .white,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w800,
+                                                          Positioned(
+                                                            bottom: -20,
+                                                            right: 0,
+                                                            child: Container(
+                                                              height: 60,
+                                                              width: 130,
+                                                              color: activeBuyMintsIndex ==
+                                                                      index
+                                                                  ? Colors.green
+                                                                  : Colors
+                                                                      .redAccent,
+                                                              padding: EdgeInsets
+                                                                  .only(
+                                                                      top: 10,
+                                                                      left: 50),
+                                                              child: Text(
+                                                                buyMins[index]
+                                                                    ["price"],
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize: 16,
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w800,
+                                                                ),
                                                               ),
                                                             ),
                                                           ),
-                                                        ),
-                                                      ],
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
                                                 );
                                               }),
                                             ),
-                                          )
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -498,123 +513,123 @@ class _WatchAdsState extends State<WatchAds> {
                 ),
               ),
               SizedBox(height: 30),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          "Watch Ads",
-                          style: TextStyle(
-                              color: AppColors.colorWhiteHighEmp, fontSize: 18),
-                        ),
-                        SizedBox(width: 8),
-                        Container(
-                          padding: EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                              color: Colors.grey[800],
-                              borderRadius: BorderRadius.circular(20)),
-                          child: Icon(
-                            Icons.question_mark,
-                            size: 16,
-                            color: AppColors.colorWhiteHighEmp,
-                          ),
-                        )
-                      ],
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      "You can watch up to 7 ads every day",
-                      style: TextStyle(color: Colors.white54, fontSize: 12),
-                    ),
-                    SizedBox(height: 20),
-                    Container(
-                      height: MediaQuery.of(context).size.height *
-                          0.6, // Set your desired height
-                      child: Column(
-                        children: List.generate(rewards.length, (index) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 8.0),
-                                      child: Icon(
-                                        rewards[index]['icon'],
-                                        size: 30,
-                                        color: AppColors.colorPrimary,
-                                      ),
-                                    ),
-                                    SizedBox(width: 10),
-                                    Image.asset(
-                                      "assets/images/coin.png",
-                                      width: 25,
-                                      height: 20,
-                                    ),
-                                    Text(
-                                      rewards[index]['reward'],
-                                      style: TextStyle(
-                                          color: AppColors.colorWhiteHighEmp,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _activeIndex = index;
-                                    });
-                                  },
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.video_camera_back_outlined,
-                                        color: Colors.white,
-                                        size: 18,
-                                      ),
-                                      SizedBox(
-                                        width: 4,
-                                      ),
-                                      Text(
-                                        rewards[index]['buttonText'],
-                                        style: TextStyle(
-                                            color: _activeIndex == index
-                                                ? Colors.white
-                                                : AppColors.colorWhiteHighEmp,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700),
-                                      ),
-                                    ],
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: _activeIndex == index
-                                        ? Colors.red
-                                        : Colors.grey[900],
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(5),
-                                    ),
-                                    padding:
-                                        EdgeInsets.symmetric(horizontal: 20),
-                                    elevation: 5,
-                                    shadowColor: Colors.black.withOpacity(0.5),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                      ),
-                    )
-                  ],
-                ),
-              ),
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              //   child: Column(
+              //     crossAxisAlignment: CrossAxisAlignment.start,
+              //     children: [
+              //       Row(
+              //         children: [
+              //           Text(
+              //             "Watch Ads",
+              //             style: TextStyle(
+              //               color: AppColors.colorWhiteHighEmp,
+              //               fontSize: 18,
+              //             ),
+              //           ),
+              //           SizedBox(width: 8),
+              //           Container(
+              //             padding: EdgeInsets.all(2),
+              //             decoration: BoxDecoration(
+              //               color: Colors.grey[800],
+              //               borderRadius: BorderRadius.circular(20),
+              //             ),
+              //             child: Icon(
+              //               Icons.question_mark,
+              //               size: 16,
+              //               color: AppColors.colorWhiteHighEmp,
+              //             ),
+              //           ),
+              //         ],
+              //       ),
+              //       SizedBox(height: 4),
+              //       Text(
+              //         "You can watch up to 7 ads every day",
+              //         style: TextStyle(color: Colors.white54, fontSize: 12),
+              //       ),
+              //       SizedBox(height: 20),
+              //       Container(
+              //         height: MediaQuery.of(context).size.height * 0.64,
+              //         child: Column(
+              //           children: List.generate(rewards.length, (index) {
+              //             return Padding(
+              //               padding: const EdgeInsets.symmetric(vertical: 10.0),
+              //               child: Row(
+              //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //                 children: [
+              //                   Row(
+              //                     children: [
+              //                       Padding(
+              //                         padding:
+              //                             const EdgeInsets.only(bottom: 8.0),
+              //                         child: Icon(
+              //                           rewards[index]['icon'],
+              //                           size: 30,
+              //                           color: AppColors.colorError,
+              //                         ),
+              //                       ),
+              //                       SizedBox(width: 10),
+              //                       Image.asset(
+              //                         "assets/images/coin.png",
+              //                         width: 25,
+              //                         height: 20,
+              //                       ),
+              //                       Text(
+              //                         rewards[index]['reward'],
+              //                         style: TextStyle(
+              //                           color: AppColors.colorWhiteHighEmp,
+              //                           fontSize: 16,
+              //                           fontWeight: FontWeight.bold,
+              //                         ),
+              //                       ),
+              //                     ],
+              //                   ),
+              //                   ElevatedButton(
+              //                     onPressed: () {
+              //                       setState(() {
+              //                         _activeIndex = index;
+              //                       });
+              //                     },
+              //                     child: Row(
+              //                       children: [
+              //                         Icon(
+              //                           Icons.video_camera_back_outlined,
+              //                           color: Colors.white,
+              //                           size: 18,
+              //                         ),
+              //                         SizedBox(width: 4),
+              //                         Text(
+              //                           rewards[index]['buttonText'],
+              //                           style: TextStyle(
+              //                             color: AppColors.colorWhiteHighEmp,
+              //                             fontSize: 12,
+              //                             fontWeight: FontWeight.w700,
+              //                           ),
+              //                         ),
+              //                       ],
+              //                     ),
+              //                     style: ElevatedButton.styleFrom(
+              //                       backgroundColor: _activeIndex == index
+              //                           ? AppColors.colorError
+              //                           : Colors.grey[900],
+              //                       shape: RoundedRectangleBorder(
+              //                         borderRadius: BorderRadius.circular(5),
+              //                       ),
+              //                       padding:
+              //                           EdgeInsets.symmetric(horizontal: 20),
+              //                       elevation: 5,
+              //                       shadowColor: Colors.black.withOpacity(0.5),
+              //                     ),
+              //                   ),
+              //                 ],
+              //               ),
+              //             );
+              //           }),
+              //         ),
+              //       )
+              //     ],
+              //   ),
+              // ),
             ],
           ),
         ));

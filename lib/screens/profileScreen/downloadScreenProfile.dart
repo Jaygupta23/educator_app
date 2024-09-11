@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 
 import '../../utils/appColors.dart';
 
@@ -18,8 +19,18 @@ class _DownloadScreenProfileState extends State<DownloadScreenProfile> {
     return Scaffold(
       backgroundColor: AppColors.colorSecondaryDarkest,
       appBar: AppBar(
-        title: const Text('Download'),
+        title: const Text(
+          'Download',
+          style: TextStyle(color: AppColors.colorSecondaryLight),
+        ),
         backgroundColor: AppColors.colorSecondaryDarkest,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          color: AppColors.colorSecondaryLight,
+          onPressed: () {
+            Get.back(); // This will navigate back using GetX
+          },
+        ),
         elevation: 0,
       ),
       body: Padding(

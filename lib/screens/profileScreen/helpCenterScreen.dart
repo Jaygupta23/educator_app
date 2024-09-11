@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../utils/appColors.dart';
 import 'contactUsScreen.dart';
@@ -33,7 +34,17 @@ class _HelpCenterScreenState extends State<HelpCenterScreen>
     return Scaffold(
       backgroundColor: AppColors.colorSecondaryDarkest,
       appBar: AppBar(
-        title: const Text('Help Center'),
+        title: const Text(
+          'Help Center',
+          style: TextStyle(color: AppColors.colorSecondaryLight),
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          color: AppColors.colorSecondaryLight,
+          onPressed: () {
+            Get.back(); // This will navigate back using GetX
+          },
+        ),
         backgroundColor: AppColors.colorSecondaryDarkest,
         elevation: 0,
         bottom: TabBar(

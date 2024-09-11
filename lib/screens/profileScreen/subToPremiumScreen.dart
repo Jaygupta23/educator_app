@@ -13,13 +13,23 @@ class SubToPremiumScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.colorSecondaryDarkest,
       appBar: AppBar(
-        title: const Text('Plans'),
+        title: const Text(
+          'Plans',
+          style: TextStyle(color: AppColors.colorSecondaryLight),
+        ),
         backgroundColor: AppColors.colorSecondaryDarkest,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          color: AppColors.colorSecondaryLight,
+          onPressed: () {
+            Get.back(); // This will navigate back using GetX
+          },
+        ),
         elevation: 0,
       ),
       body: Column(
         children: [
-          SizedBox(height: 15.h),
+          SizedBox(height: 8.h),
           Center(
               child: Text(
             'Subscribe to Premium',
@@ -123,7 +133,7 @@ class SubToPremiumScreen extends StatelessWidget {
                       children: [
                         SizedBox(height: 20.h),
                         Text(
-                          'Bd 1 year..',
+                          '1 year..',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
@@ -163,7 +173,7 @@ class SubToPremiumScreen extends StatelessWidget {
                         ),
                         SizedBox(height: 10.h),
                         Text(
-                          'BDT 899',
+                          'INR 899',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
@@ -195,7 +205,7 @@ class SubToPremiumScreen extends StatelessWidget {
                       children: [
                         SizedBox(height: 20.h),
                         Text(
-                          'Bd 1 year..',
+                          '1 year..',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
@@ -240,7 +250,7 @@ class SubToPremiumScreen extends StatelessWidget {
                         ),
                         SizedBox(height: 10.h),
                         Text(
-                          'BDT 599',
+                          'INR 599',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
@@ -277,7 +287,7 @@ class SubToPremiumScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12)),
                 child: Center(
                   child: Text(
-                    'CONTINUE WITH BD 1 YEAR 2 STREMS',
+                    'CONTINUE WITH PREMIUM',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: AppColors.colorWhiteHighEmp,

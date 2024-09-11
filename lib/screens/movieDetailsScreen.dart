@@ -150,7 +150,7 @@ class _MovieDetailsScreenState extends State<MovieDetailsScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              height: 300.h,
+              height: 300,
               width: double.infinity,
               decoration: const BoxDecoration(
                 image: DecorationImage(

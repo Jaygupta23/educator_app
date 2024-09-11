@@ -169,7 +169,7 @@ class MainSignInScreen extends StatelessWidget {
                 SizedBox(width: 5.w),
                 InkWell(
                   onTap: () {
-                    Get.to(const SignUpScreen());
+                    Get.to(() => const SignUpScreen());
                   },
                   child: Text(
                     "Sign Up",

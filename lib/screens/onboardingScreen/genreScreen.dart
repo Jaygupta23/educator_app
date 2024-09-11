@@ -1,10 +1,10 @@
 import 'dart:math';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:reelies/models/myBottomNavModel.dart';
 import 'package:reelies/utils/appColors.dart';
+import '../../models/myBottomNavModel.dart';
 
 class GenreItem {
   final String title;
@@ -39,6 +39,7 @@ class _GenreScreenState extends State<GenreScreen>
   List<AnimationController?> _controllers = [];
   List<Animation<double>?> _animations = [];
   List<int> _selectedGenres = []; // Track selected genres
+  List<AnimationController?> _shakeControllers = []; // For shaking effect
 
   @override
   void initState() {
@@ -49,6 +50,12 @@ class _GenreScreenState extends State<GenreScreen>
         duration: Duration(milliseconds: 500),
       ));
       _animations.add(Tween(begin: 1.0, end: 2.0).animate(_controllers[i]!));
+
+      // Initialize shake controllers
+      _shakeControllers.add(AnimationController(
+        vsync: this,
+        duration: Duration(milliseconds: Random().nextInt(700) + 300),
+      ));
     }
   }
 
@@ -70,7 +77,8 @@ class _GenreScreenState extends State<GenreScreen>
             false; // Remove the balloon from the visible list
       });
 
-      if (_selectedGenres.length == 3) {
+      if (_selectedGenres.length == 3 ||
+          _selectedGenres.length == genreItems.length) {
         _showSelectedGenresDialog(); // Show modal if at least 3 genres are selected
       }
     });
@@ -81,145 +89,104 @@ class _GenreScreenState extends State<GenreScreen>
 
     showModalBottomSheet(
       context: context,
-      isDismissible:
-          !allGenresSelected, // Prevent dismiss if all genres are selected
+      isDismissible: !allGenresSelected,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            return WillPopScope(
-              onWillPop: () async => !allGenresSelected,
-              // Prevent back button if all genres are selected
-              child: Container(
-                padding: EdgeInsets.all(20.0),
-                decoration: BoxDecoration(
-                    color: AppColors.colorSecondaryDarkest,
-                    borderRadius: BorderRadius.only(
-                        topRight: Radius.circular(20),
-                        topLeft: Radius.circular(20))),
-                height: MediaQuery.of(context).size.height / 3,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: constraints.maxHeight * 0.02),
-                        Center(
-                          child: Text(
-                            'Selected Genres',
-                            style: TextStyle(
-                                fontSize: constraints.maxWidth * 0.07,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.colorPrimary),
-                          ),
-                        ),
-                        SizedBox(height: constraints.maxHeight * 0.1),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            child: Wrap(
-                              spacing: constraints.maxWidth * 0.025,
-                              runAlignment: WrapAlignment.spaceAround,
-                              children: [
-                                ..._selectedGenres.map((index) {
-                                  final genreItem = genreItems[index];
-                                  return Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      vertical: constraints.maxHeight * 0.02,
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        Container(
-                                          width: constraints.maxWidth * 0.31,
-                                          height: constraints.maxHeight * 0.15,
-                                          decoration: BoxDecoration(
-                                              color:
-                                                  AppColors.colorWhiteHighEmp,
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                    color: AppColors
-                                                        .colorSecondaryDarkest,
-                                                    spreadRadius: 2,
-                                                    blurRadius: 4)
-                                              ]),
-                                          child: Center(
-                                            child: Text(
-                                              genreItem.title,
-                                              style: TextStyle(
-                                                  fontSize:
-                                                      constraints.maxWidth *
-                                                          0.04,
-                                                  color:
-                                                      AppColors.colorPrimary),
-                                            ),
-                                          ),
-                                        ),
-                                        if (!allGenresSelected) // Only show close icon if not all genres selected
-                                          Positioned(
-                                            top: -constraints.maxHeight * 0.076,
-                                            right:
-                                                -constraints.maxWidth * 0.056,
-                                            child: IconButton(
-                                              icon: Icon(
-                                                  CupertinoIcons
-                                                      .minus_circle_fill,
-                                                  size: constraints.maxWidth *
-                                                      0.05,
-                                                  color:
-                                                      AppColors.colorPrimary),
-                                              onPressed: () {
-                                                setModalState(() {
-                                                  _selectedGenres.remove(index);
-                                                });
-                                                setState(() {
-                                                  _isBalloonVisible[index] =
-                                                      true;
-                                                  _balloonSizes[index] = 120.0;
-                                                  _isExploding[index] = false;
-                                                  _controllers[index]?.reset();
-                                                });
-
-                                                if (_selectedGenres.isEmpty) {
-                                                  Navigator.of(context).pop();
-                                                }
-                                              },
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: constraints.maxHeight * 0.08),
-                        Center(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Get.offAll(const MyBottomNavModel());
-                            },
-                            style: ElevatedButton.styleFrom(
-                                elevation: 5,
-                                shadowColor: AppColors.colorPrimary,
-                                backgroundColor: AppColors.colorPrimary,
-                                padding: EdgeInsets.symmetric(horizontal: 40),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(6))),
-                            child: Text(
-                              'Continue',
-                              style: TextStyle(
-                                fontSize: constraints.maxWidth * 0.045,
-                                color: AppColors.colorWhiteHighEmp,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+            return Container(
+              padding: EdgeInsets.all(10.0),
+              height: MediaQuery.of(context).size.height / 3,
+              decoration: BoxDecoration(
+                color: Colors.grey[900],
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 5),
+                  Center(
+                    child: Text(
+                      'Selected Genres',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Wrap(
+                        spacing: 5.0,
+                        runSpacing: 2.0,
+                        children: _selectedGenres.map((index) {
+                          final genreItem = genreItems[index];
+                          return Container(
+                            width: 110,
+                            child: Chip(
+                              label: Text(
+                                genreItem.title,
+                                style: TextStyle(
+                                    color: AppColors
+                                        .colorWhiteHighEmp), // Ensure text is visible
+                              ),
+                              avatar: CircleAvatar(
+                                backgroundImage:
+                                    AssetImage(genreItem.imagePath),
+                              ),
+                              deleteIcon: Icon(Icons.close,
+                                  size: 20, color: AppColors.colorWhiteHighEmp),
+                              onDeleted: () {
+                                setModalState(() {
+                                  _selectedGenres.remove(index);
+                                });
+                                setState(() {
+                                  _isBalloonVisible[index] =
+                                      true; // Show bubble back on screen
+                                  _controllers[index]
+                                      ?.reset(); // Reset animation
+                                  _isExploding[index] = false; // Stop explosion
+                                });
+                                if (_selectedGenres.isEmpty) {
+                                  Navigator.of(context).pop();
+                                }
+                              },
+                              backgroundColor: AppColors.colorSecondaryDarkest,
+                              // Set the background color to transparent
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Get.offAll(() => const MyBottomNavModel());
+                      },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.colorPrimary,
+                        padding: EdgeInsets.symmetric(horizontal: 40),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6.0),
+                        ),
+                      ),
+                      child: Text(
+                        'Continue',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             );
           },
@@ -232,6 +199,9 @@ class _GenreScreenState extends State<GenreScreen>
   void dispose() {
     for (var controller in _controllers) {
       controller?.dispose();
+    }
+    for (var shakeController in _shakeControllers) {
+      shakeController?.dispose();
     }
     super.dispose();
   }
@@ -308,16 +278,14 @@ class _GenreScreenState extends State<GenreScreen>
 
                           final int duration = random.nextInt(700) + 300;
 
-                          AnimationController _shakeController =
-                              AnimationController(
-                            duration: Duration(milliseconds: duration),
-                            vsync: this,
-                          );
+                          // Use the shake controller for this specific index
+                          final _shakeController =
+                              _shakeControllers[actualIndex];
 
                           Animation<double> _shakeAnimation =
                               Tween(begin: 20.0, end: 0.0)
                                   .chain(CurveTween(curve: Curves.easeInOut))
-                                  .animate(_shakeController);
+                                  .animate(_shakeController!);
 
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             Future.delayed(
@@ -409,12 +377,12 @@ class _GenreScreenState extends State<GenreScreen>
           ),
           if (_selectedGenres.length >= 1)
             Positioned(
-              bottom: 30,
-              right: 10,
+              bottom: 15,
+              right: 6,
               child: GestureDetector(
                 onTap: _showSelectedGenresDialog,
                 child: Container(
-                  padding: EdgeInsets.all(10),
+                  padding: EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: AppColors.colorError,
                     shape: BoxShape.circle,
@@ -427,8 +395,8 @@ class _GenreScreenState extends State<GenreScreen>
                     ],
                   ),
                   child: Icon(
-                    Icons.queue,
-                    color: Colors.white,
+                    CupertinoIcons.chevron_up,
+                    color: AppColors.colorWhiteHighEmp,
                     size: 28,
                   ),
                 ),

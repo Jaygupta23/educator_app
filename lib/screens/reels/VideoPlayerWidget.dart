@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:reelies/screens/reels/VideoListScreen.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
   final String url;
@@ -31,16 +33,15 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _initializeVideoPlayerFuture = _initializeVideoPlayer();
   }
 
   Future<void> _initializeVideoPlayer() async {
-    print("videos : ${widget.url}");
     try {
-      final encodedUrl = Uri.encodeFull(widget.url);
-      _controller = VideoPlayerController.network(encodedUrl);
+      // Start with network streaming for immediate playback
+      _controller = VideoPlayerController.network(widget.url);
       await _controller!.initialize();
+
       if (!mounted) return;
       setState(() {
         _sliderMax = _controller!.value.duration.inSeconds.toDouble();
@@ -48,14 +49,17 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
           _controller!.seekTo(_lastPosition!);
         }
         _controller!.play();
-        _startSliderUpdateTimer(); // Start the timer to update slider
+        _startSliderUpdateTimer();
       });
+
+      // Start caching in the background
+      _startCaching();
     } catch (error) {
       print("Error initializing video player: $error");
     }
 
     _controller!.addListener(() {
-      if (_controller!.value.isInitialized) {
+      if (_controller!.value.isInitialized && _controller!.value.isPlaying) {
         if (!mounted) return;
         setState(() {
           _isPlaying = _controller!.value.isPlaying;
@@ -77,6 +81,16 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
     });
   }
 
+  void _startCaching() async {
+    try {
+      // Start caching the file in the background
+      await DefaultCacheManager().getSingleFile(widget.url);
+      print("Video cached successfully: ${widget.url}");
+    } catch (e) {
+      print("Error caching video: $e");
+    }
+  }
+
   void _startSliderUpdateTimer() {
     _sliderUpdateTimer?.cancel();
     _sliderUpdateTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
@@ -94,25 +108,32 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
-    _hideControlIconTimer?.cancel();
     _sliderUpdateTimer?.cancel();
     super.dispose();
   }
 
   void _togglePlayPause() {
-    if (_controller != null && _controller!.value.isInitialized) {
-      if (!mounted) return;
-      setState(() {
-        if (_isPlaying) {
-          _controller!.pause();
-        } else {
-          _controller!.play();
-        }
-        _isPlaying = !_isPlaying;
-        _showControlIcon = true;
-        _startHideControlIconTimer();
-      });
+    if (_controller == null) return;
+
+    if (_isPlaying) {
+      _controller!.pause();
+    } else {
+      _controller!.play();
     }
+
+    setState(() {
+      _isPlaying = !_isPlaying;
+      _showControlIcon = true;
+    });
+
+    _hideControlIconTimer?.cancel();
+    _hideControlIconTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _showControlIcon = false;
+        });
+      }
+    });
   }
 
   void _startHideControlIconTimer() {
@@ -218,13 +239,15 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                       : const CircularProgressIndicator(),
                 ),
                 if (_showControlIcon)
-                  Center(
+                  Positioned(
+                    top: MediaQuery.of(context).size.height / 2.3,
+                    right: MediaQuery.of(context).size.width / 2.3,
                     child: Icon(
                       _isPlaying
                           ? Icons.pause_rounded
                           : Icons.play_arrow_rounded,
-                      size: 90.0,
-                      color: Colors.white54,
+                      size: 70.0,
+                      color: Colors.white70,
                     ),
                   ),
                 Positioned(
@@ -323,11 +346,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                           ),
                           IconButton(
                             onPressed: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          VideoListScreen(url: widget.url)));
+                              Get.to(() => VideoListScreen(url: widget.url));
                             },
                             icon: Icon(
                               Icons.layers,

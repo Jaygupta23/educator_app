@@ -6,7 +6,6 @@ import 'package:reelies/screens/authScreens/signUpScreen.dart';
 import 'package:reelies/screens/interestScreen.dart';
 import 'package:get/get.dart';
 
-
 import '../../utils/appColors.dart';
 import '../../utils/constants.dart';
 import '../../utils/myButton.dart';
@@ -65,15 +64,15 @@ class _SignInScreenState extends State<SignInScreen> {
                 Center(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColors
-                          .colorGrey, // sets the background color of the container
+                      color: AppColors.colorGrey,
+                      // sets the background color of the container
                       borderRadius: BorderRadius.circular(
                           8), // sets the border radius of the container
                     ),
                     width: 296.w, // sets the width of the container
                     child: TextFormField(
-                      controller:
-                          emailController, // sets the controller for the text input field
+                      controller: emailController,
+                      // sets the controller for the text input field
                       validator: (value) {
                         // defines the validation function for the text input field
                         // checks if the input value matches a specific pattern
@@ -89,21 +88,22 @@ class _SignInScreenState extends State<SignInScreen> {
                         }
                         return null;
                       },
-                      style: const TextStyle(
-                          color: AppColors
-                              .colorDisabled), // sets the text style for the text input field
+                      style: const TextStyle(color: AppColors.colorDisabled),
+                      // sets the text style for the text input field
                       decoration: InputDecoration(
-                        hintText:
-                            'Email Address', // sets the hint text for the text input field
-                        hintStyle: const TextStyle(
-                            color: AppColors
-                                .colorDisabled), // sets the hint text style for the text input field
+                        hintText: 'Email Address',
+                        // sets the hint text for the text input field
+                        hintStyle:
+                            const TextStyle(color: AppColors.colorDisabled),
+                        // sets the hint text style for the text input field
                         prefixIcon: const Icon(
                           Icons.send_rounded,
                           color: AppColors.colorDisabled,
-                        ), // sets the prefix icon for the text input field
-                        contentPadding: const EdgeInsets.fromLTRB(10, 16, 8,
-                            16), // sets the padding for the text input field content
+                        ),
+                        // sets the prefix icon for the text input field
+                        contentPadding:
+                            const EdgeInsets.fromLTRB(10, 16, 8, 16),
+                        // sets the padding for the text input field content
                         enabledBorder: OutlineInputBorder(
                           // sets the border for the enabled state of the text input field
                           borderRadius: BorderRadius.circular(8),
@@ -326,18 +326,19 @@ class _SignInScreenState extends State<SignInScreen> {
                             .colorWhiteHighEmp, // white color defined elsewhere
                       ),
                     ),
-                    SizedBox(width: 5.w), // empty space between the two texts
+                    SizedBox(width: 5.w),
+                    // empty space between the two texts
                     InkWell(
                       onTap: () {
-                        Get.to(
+                        Get.to(() =>
                             const SignUpScreen()); // navigation function to another screen
                       },
                       child: Text(
                         signUp,
                         style: TextStyle(
                             fontSize: 16.sp,
-                            color: AppColors
-                                .colorPrimary, // primary color defined elsewhere
+                            color: AppColors.colorPrimary,
+                            // primary color defined elsewhere
                             fontWeight: FontWeight.bold), // bold font weight
                       ),
                     ),

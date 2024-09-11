@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 
 import '../../utils/appColors.dart';
 
@@ -14,13 +15,22 @@ class _SecurityScreenProfileState extends State<SecurityScreenProfile> {
   bool isSwitched = false;
   bool isSwitched2 = false;
   bool isSwitched3 = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.colorSecondaryDarkest,
       appBar: AppBar(
-        title: const Text('Security'),
+        title: const Text('Security',
+            style: TextStyle(color: AppColors.colorSecondaryLight)),
         backgroundColor: AppColors.colorSecondaryDarkest,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          color: AppColors.colorSecondaryLight,
+          onPressed: () {
+            Get.back(); // This will navigate back using GetX
+          },
+        ),
         elevation: 0,
       ),
       body: Padding(
@@ -262,8 +272,8 @@ class _SecurityScreenProfileState extends State<SecurityScreenProfile> {
                     //         builder: (context) => ProfileScreen()));
                   },
                   style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.all<Color>(
-                        AppColors.colorPrimary),
+                    backgroundColor:
+                        WidgetStateProperty.all<Color>(AppColors.colorPrimary),
                     shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                       RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -275,7 +285,9 @@ class _SecurityScreenProfileState extends State<SecurityScreenProfile> {
                     child: Text(
                       'CHANGE PASSWORD',
                       style: TextStyle(
-                          fontSize: 16.sp, fontWeight: FontWeight.w600),
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.colorWhiteHighEmp),
                     ),
                   ),
                 ),

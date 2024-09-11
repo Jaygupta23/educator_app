@@ -21,8 +21,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.colorSecondaryDarkest,
       appBar: AppBar(
-        title: const Text('Edit Profile'),
         backgroundColor: AppColors.colorSecondaryDarkest,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          color: AppColors.colorSecondaryLight,
+          onPressed: () {
+            Get.back(); // This will navigate back using GetX
+          },
+        ),
+        title: const Text(
+          'Edit Profile',
+          style: TextStyle(color: AppColors.colorSecondaryLight),
+        ),
         elevation: 0,
       ),
       body: Padding(
@@ -179,7 +189,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                initialCountryCode: 'BD',
+                initialCountryCode: 'IN',
               ),
               GenderDropdownModel(),
               SizedBox(height: 70.h),

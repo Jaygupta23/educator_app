@@ -45,7 +45,7 @@ class _EpisodeListState extends State<EpisodeList> {
               ],
             ),
             child: SizedBox(
-              width: 70,
+              width: 60,
               height: 50,
               child: Stack(
                 alignment: Alignment.center,

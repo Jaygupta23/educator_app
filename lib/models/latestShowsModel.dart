@@ -19,7 +19,7 @@ class LatestShowsModel extends StatelessWidget {
           children: [
             InkWell(
               onTap: () {
-                Get.to(const MovieDetailsScreen());
+                // Get.to(() => const MovieDetailsScreen());
               },
               child: Padding(
                 padding: const EdgeInsets.only(left: 16),
@@ -40,9 +40,9 @@ class LatestShowsModel extends StatelessWidget {
               ),
             ),
             SizedBox(width: 10.w),
-            GestureDetector(
+            InkWell(
               onTap: () {
-                Get.to(const MovieDetailsScreen());
+                // Get.to(() => const MovieDetailsScreen());
               },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,9 +60,9 @@ class LatestShowsModel extends StatelessWidget {
               ),
             ),
             SizedBox(width: 10.w),
-            GestureDetector(
+            InkWell(
               onTap: () {
-                Get.to(const MovieDetailsScreen());
+                // Get.to(() => const MovieDetailsScreen());
               },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,9 +80,9 @@ class LatestShowsModel extends StatelessWidget {
               ),
             ),
             SizedBox(width: 10.w),
-            GestureDetector(
+            InkWell(
               onTap: () {
-                Get.to(const MovieDetailsScreen());
+                // Get.to(() => const MovieDetailsScreen());
               },
               child: Padding(
                 padding: const EdgeInsets.only(right: 16),

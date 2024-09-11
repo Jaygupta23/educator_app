@@ -7,7 +7,8 @@ import 'package:reelies/models/mostTrendingShowsModel.dart';
 import 'package:reelies/screens/homeScreen/latestShowsScreen.dart';
 import 'package:reelies/screens/homeScreen/trendingVideosScreen.dart';
 import 'package:get/get.dart';
-import 'package:reelies/screens/reels/VideoScreen.dart';
+import 'package:reelies/screens/reels/VideoListScreen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:video_player/video_player.dart';
 import '../../utils/appColors.dart';
 import '../../utils/constants.dart';
@@ -31,17 +32,19 @@ class _HomeScreenState extends State<HomeScreen> {
     "Horror",
   ];
   final List<String> imagePaths = [
-    "assets/images/homeBig.png",
-    "assets/images/slide1.png",
-    "assets/images/slide2.png",
-    "assets/images/slide6.png",
-    "assets/images/slide8.png",
-    "assets/images/slide9.png",
+    "https://drive.google.com/uc?export=view&id=1czrK2IHT8jb0IoDddzqFnta9DUf3OcsU",
+    "https://drive.google.com/uc?export=view&id=1r5RhogLJhzlibJ7m0og5QnSQzoTTgm0-",
+    "https://drive.google.com/uc?export=view&id=1InwHi17wiV2kpgbgalq3DQkHihywIETi",
+    "https://drive.google.com/uc?export=view&id=1Xyp-U_SYRfpoLfBeyksOZttQXEb5WvGW",
+    "https://drive.google.com/uc?export=view&id=14SCebPpJbQ6qF_xF6S95dxTksgXCi5Pw",
+    "https://drive.google.com/uc?export=view&id=1Iwtrue8j3BiGN2ZauXo2WGWA1vGoDuuV",
+    "https://drive.google.com/uc?export=view&id=12wDYHOjAFNHcjAy8_J0C62uZQcsFc-Jf",
   ];
 
-  final List<String> videoUrls = [
+  final List<String> trailerUrls = [
     "https://videos.pexels.com/video-files/26183148/11937275_1080_1920_30fps.mp4",
     "https://website-assets.vidyo.ai/SwiperVideo%20-Jacktorr.webm",
+    "https://drive.google.com/uc?export=download&id=1U6n0HO-1cH-IZ0bGk5YcMht2faMAowDn",
     "https://videos.pexels.com/video-files/17301128/17301128-sd_360_640_30fps.mp4",
     "https://videos.pexels.com/video-files/26524813/11956374_360_640_25fps.mp4",
     "https://videos.pexels.com/video-files/20684425/20684425-sd_360_640_30fps.mp4",
@@ -59,6 +62,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<String> _selectedData =
       []; // initially empty list for selected movie genres
+
+  final List<String> videoUrls = [
+    "https://drive.google.com/uc?export=download&id=1QsQc5JLknurEyu8oi_XfPJ4oRG_iu9SL",
+    "https://drive.google.com/uc?export=download&id=168yaRUwX9W0mCPxk6LHRzQTs-Le4dCXT",
+    "https://drive.google.com/uc?export=download&id=1AewdzLeebn-D3IsHHAj9Eqo0s6fjkhUY",
+    "https://drive.google.com/uc?export=download&id=1voVeMTKZuyoIzHHH70wTT7uAujRmq-_N",
+    "https://drive.google.com/uc?export=download&id=1OA0UGOVfVPeIl8_ycyFefC0uvLXC2UhU",
+    "https://drive.google.com/uc?export=download&id=1suA9MraPrtoG5AGm6e5n4iEA2pYaKL83",
+  ];
 
 // function to handle selection of movie genres
   _onSelected(bool selected, String data) {
@@ -78,11 +90,21 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
 
     _currentPageIndex = 0;
-    _controllers = videoUrls.map((videoUrl) {
-      return VideoPlayerController.network(videoUrl)
+    _controllers = trailerUrls.map((videoUrl) {
+      VideoPlayerController controller = VideoPlayerController.network(videoUrl)
         ..initialize().then((_) {
           setState(() {}); // Refresh the widget after initialization
         });
+
+      // Add a listener to replay the video after it finishes
+      controller.addListener(() {
+        if (controller.value.position == controller.value.duration) {
+          controller.seekTo(Duration.zero); // Reset video to the start
+          controller.play(); // Replay the video
+        }
+      });
+
+      return controller;
     }).toList();
 
     // Initialize the PageController at a high index
@@ -106,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _startAutoSlideTimer() {
     _autoSlideTimer?.cancel();
-    _autoSlideTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+    _autoSlideTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (!_isHolding) {
         setState(() {
           _currentPageIndex = (_currentPageIndex + 1) %
@@ -178,14 +200,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           Positioned.fill(
                             child: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 300),
-                              child: Image.asset(
-                                imagePaths[
+                              child: CachedNetworkImage(
+                                imageUrl: imagePaths[
                                     _currentPageIndex % imagePaths.length],
                                 key: ValueKey<String>(imagePaths[
                                     _currentPageIndex % imagePaths.length]),
                                 fit: BoxFit.cover,
                                 color: Colors.black.withOpacity(0.5),
                                 colorBlendMode: BlendMode.darken,
+                                placeholder: (context, url) =>
+                                    CircularProgressIndicator(),
+                                errorWidget: (context, url, error) =>
+                                    Icon(Icons.error),
                               ),
                             ),
                           ),
@@ -209,8 +235,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 });
                               },
                               onTap: () {
-                                Get.to(const VideoScreen());
-                                print("hello");
+                                // Get the current video URL based on the current page index
+                                final currentVideoUrl = videoUrls[
+                                    _currentPageIndex % videoUrls.length];
+
+                                // Navigate to VideoListScreen with the current video URL
+                                Get.to(VideoListScreen(url: currentVideoUrl));
                               },
                               onLongPressUp: () {
                                 setState(() {
@@ -225,15 +255,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                 controller: _pageController,
                                 onPageChanged: (index) {
                                   setState(() {
+                                    // Pause the previous video when page changes
+                                    _controllers[_currentPageIndex %
+                                            _controllers.length]
+                                        .pause();
                                     _currentPageIndex =
                                         index % imagePaths.length;
+
+                                    // Play the new current page video if holding
+                                    if (_isHolding) {
+                                      _controllers[_currentPageIndex].play();
+                                    }
                                   });
                                 },
                                 itemBuilder: (context, index) {
                                   final actualIndex = index % imagePaths.length;
                                   final isCurrentPage =
-                                      (index % imagePaths.length) ==
-                                          _currentPageIndex;
+                                      actualIndex == _currentPageIndex;
 
                                   return Transform.scale(
                                     scale: isCurrentPage ? 1 : 0.9,
@@ -246,10 +284,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                         boxShadow: isCurrentPage
                                             ? [
                                                 BoxShadow(
-                                                    blurRadius: 10,
-                                                    color: AppColors
-                                                        .colorSecondaryDarkest,
-                                                    spreadRadius: 5)
+                                                  blurRadius: 10,
+                                                  color: AppColors
+                                                      .colorSecondaryDarkest,
+                                                  spreadRadius: 5,
+                                                )
                                               ]
                                             : [],
                                       ),
@@ -274,9 +313,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     )
                                                   : Container(
                                                       color: Colors.black))
-                                              : Image.asset(
-                                                  imagePaths[actualIndex],
+                                              : CachedNetworkImage(
+                                                  imageUrl:
+                                                      imagePaths[actualIndex],
                                                   fit: BoxFit.cover,
+                                                  placeholder: (context, url) =>
+                                                      CircularProgressIndicator(),
+                                                  errorWidget:
+                                                      (context, url, error) =>
+                                                          Icon(Icons.error),
                                                 ),
                                         ),
                                       ),

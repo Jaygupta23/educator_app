@@ -1,6 +1,7 @@
 // Import necessary packages and files
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 import '../../utils/appColors.dart';
 import '../../utils/constants.dart';
 
@@ -13,7 +14,17 @@ class PrivacyPolicyScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.colorSecondaryDarkest,
       appBar: AppBar(
-        title: const Text('Privacy Policy'),
+        title: const Text(
+          'Privacy Policy',
+          style: TextStyle(color: AppColors.colorSecondaryLight),
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          color: AppColors.colorSecondaryLight,
+          onPressed: () {
+            Get.back(); // This will navigate back using GetX
+          },
+        ),
         backgroundColor: AppColors.colorSecondaryDarkest,
         elevation: 0,
       ),

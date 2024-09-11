@@ -185,7 +185,7 @@ class _FaqScreenState extends State<FaqScreen> {
                 ),
                 SizedBox(height: 15.h),
                 Container(
-                  height: 80.h,
+                  height: 100.h,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
@@ -201,7 +201,7 @@ class _FaqScreenState extends State<FaqScreen> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
-                              'What Time Does The Stock Market Open?',
+                              'What Time Does The Stock Market \n Open?',
                               style: TextStyle(
                                   fontSize: 14.sp,
                                   color: AppColors.colorWhiteHighEmp,
@@ -219,7 +219,7 @@ class _FaqScreenState extends State<FaqScreen> {
                 ),
                 SizedBox(height: 15.h),
                 Container(
-                  height: 80.h,
+                  height: 100.h,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
@@ -235,7 +235,7 @@ class _FaqScreenState extends State<FaqScreen> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
-                              'Is The Stock Market Open On Weekends?',
+                              'Is The Stock Market Open On \nWeekends?',
                               style: TextStyle(
                                   fontSize: 14.sp,
                                   color: AppColors.colorWhiteHighEmp,
