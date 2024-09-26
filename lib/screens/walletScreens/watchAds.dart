@@ -16,44 +16,44 @@ class _WatchAdsState extends State<WatchAds> {
   @override
   Widget build(BuildContext context) {
     int? activeBuyMintsIndex = -1;
-    final List<Map<String, dynamic>> rewards = [
-      {
-        "icon": Icons.live_tv_rounded,
-        "reward": "+10",
-        "buttonText": "Watch Ad"
-      },
-      {
-        "icon": Icons.live_tv_rounded,
-        "reward": "+10",
-        "buttonText": "Watch Ad"
-      },
-      {
-        "icon": Icons.live_tv_rounded,
-        "reward": "+10",
-        "buttonText": "Watch Ad"
-      },
-      {
-        "icon": Icons.live_tv_rounded,
-        "reward": "+15",
-        "buttonText": "Watch Ad"
-      },
-      {
-        "icon": Icons.live_tv_rounded,
-        "reward": "+15",
-        "buttonText": "Watch Ad"
-      },
-      {
-        "icon": Icons.live_tv_rounded,
-        "reward": "+15",
-        "buttonText": "Watch Ad"
-      },
-      {
-        "icon": Icons.live_tv_rounded,
-        "reward": "+20",
-        "buttonText": "Watch Ad"
-      },
-      // Add more items here
-    ];
+    // final List<Map<String, dynamic>> rewards = [
+    //   {
+    //     "icon": Icons.live_tv_rounded,
+    //     "reward": "+10",
+    //     "buttonText": "Watch Ad"
+    //   },
+    //   {
+    //     "icon": Icons.live_tv_rounded,
+    //     "reward": "+10",
+    //     "buttonText": "Watch Ad"
+    //   },
+    //   {
+    //     "icon": Icons.live_tv_rounded,
+    //     "reward": "+10",
+    //     "buttonText": "Watch Ad"
+    //   },
+    //   {
+    //     "icon": Icons.live_tv_rounded,
+    //     "reward": "+15",
+    //     "buttonText": "Watch Ad"
+    //   },
+    //   {
+    //     "icon": Icons.live_tv_rounded,
+    //     "reward": "+15",
+    //     "buttonText": "Watch Ad"
+    //   },
+    //   {
+    //     "icon": Icons.live_tv_rounded,
+    //     "reward": "+15",
+    //     "buttonText": "Watch Ad"
+    //   },
+    //   {
+    //     "icon": Icons.live_tv_rounded,
+    //     "reward": "+20",
+    //     "buttonText": "Watch Ad"
+    //   },
+    //   // Add more items here
+    // ];
 
     final List<Map<String, dynamic>> dailyCheckIn = [
       {"day": "1", "point": "+10"},
@@ -66,11 +66,11 @@ class _WatchAdsState extends State<WatchAds> {
     ];
 
     final List<Map<String, dynamic>> buyMins = [
-      {"mins": "+10 mins", "price": "INR 10"},
-      {"mins": "+20 mins", "price": "INR 20"},
-      {"mins": "+30 mins", "price": "INR 30"},
-      {"mins": "+40 mins", "price": "INR 50"},
-      {"mins": "+50 mins", "price": "INR 50"},
+      {"mints": "+1 mints", "price": "INR 10"},
+      {"mints": "+2 mints", "price": "INR 20"},
+      {"mints": "+3 mints", "price": "INR 30"},
+      {"mints": "+4 mints", "price": "INR 50"},
+      {"mints": "+5 mints", "price": "INR 50"},
     ];
 
     return Scaffold(
@@ -295,7 +295,7 @@ class _WatchAdsState extends State<WatchAds> {
                                                                   child: Text(
                                                                     buyMins[index]
                                                                         [
-                                                                        "mins"],
+                                                                        "mints"],
                                                                     style:
                                                                         TextStyle(
                                                                       fontSize:
@@ -325,7 +325,7 @@ class _WatchAdsState extends State<WatchAds> {
                                                               padding: EdgeInsets
                                                                   .only(
                                                                       top: 10,
-                                                                      left: 50),
+                                                                      left: 45),
                                                               child: Text(
                                                                 buyMins[index]
                                                                     ["price"],

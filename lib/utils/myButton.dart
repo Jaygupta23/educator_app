@@ -34,14 +34,18 @@ class _MyButtonState extends State<MyButton> {
           height: 50.h,
           width: double.infinity,
           child: Center(
-              child: Text(
-            widget.text,
-            style: TextStyle(
-              color: AppColors.colorWhiteHighEmp,
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          )),
+              child: widget.text == ""
+                  ? CircularProgressIndicator(
+                      color: AppColors.colorWhiteHighEmp,
+                    )
+                  : Text(
+                      widget.text,
+                      style: TextStyle(
+                        color: AppColors.colorWhiteHighEmp,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    )),
         ),
       ),
     );

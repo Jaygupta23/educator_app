@@ -8,9 +8,11 @@ import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class VideoListScreen extends StatefulWidget {
-  final String url;
+  final List<String> urls; // List of video URLs
+  final String movieName; // List of video URLs
 
-  const VideoListScreen({Key? key, required this.url}) : super(key: key);
+  const VideoListScreen({Key? key, required this.urls, required this.movieName})
+      : super(key: key);
 
   @override
   State<VideoListScreen> createState() => _VideoListScreenState();
@@ -20,67 +22,78 @@ class _VideoListScreenState extends State<VideoListScreen> {
   VideoPlayerController? _controller;
   bool _isPlaying = false;
   bool _showControlIcon = false;
+  int _currentVideoIndex = 0;
   Timer? _hideControlIconTimer;
   double _sliderValue = 0.0;
   double _sliderMax = 1.0;
   bool isLiked = false;
   bool isBookmark = false;
   late Future<void> _initializeVideoPlayerFuture;
-
   Duration _currentTime = Duration.zero;
   Duration _totalDuration = Duration.zero;
+  double _playbackSpeed = 1.0; // Default playback speed
+  List<double> _speedOptions = [0.5, 1.0, 1.25, 1.5];
 
-  @override
   void initState() {
     super.initState();
+    // Retrieve initialIndex from Get arguments if available
+    final int? initialIndex = Get.arguments as int?;
+    if (initialIndex != null) {
+      _currentVideoIndex =
+          initialIndex; // Set current video index from arguments
+    }
+    print(widget.urls);
+    print("hello ${widget.movieName}");
+    if (widget.urls.isNotEmpty) {
+      _initializeVideo();
+    } else {
+      print("No video URLs provided.");
+    }
+  }
 
-    _controller = VideoPlayerController.network(widget.url);
-
+  void _initializeVideo() {
+    print("Initializing video at index $_currentVideoIndex");
+    _controller?.dispose();
+    _controller =
+        VideoPlayerController.network(widget.urls[_currentVideoIndex]);
     _initializeVideoPlayerFuture = _controller!.initialize().then((_) {
-      // Update state with video duration and initialize the slider max value
       setState(() {
         _sliderMax = _controller!.value.duration.inSeconds.toDouble();
+        _sliderValue = 0; // Reset the slider value to the start
         _totalDuration = _controller!.value.duration;
         _currentTime = _controller!.value.position;
+        _controller!.play();
+        _isPlaying = true;
       });
 
-      // Automatically start playing the video
-      _controller!.play();
-      _isPlaying = true;
-
-      // Add listener to update current time and slider value
+      // Listen for changes in video playback
       _controller!.addListener(() {
-        if (_controller!.value.isInitialized && _controller!.value.isPlaying) {
+        if (_controller!.value.isInitialized) {
           setState(() {
-            _sliderValue = _controller!.value.position.inSeconds.toDouble();
+            // Update slider and current time
+            _sliderValue = _controller!.value.position.inSeconds
+                .toDouble()
+                .clamp(0, _sliderMax);
             _currentTime = _controller!.value.position;
-          });
-        }
-        if (_controller!.value.isInitialized && !_controller!.value.isPlaying) {
-          setState(() {
-            _sliderValue = _controller!.value.position.inSeconds.toDouble();
-            _currentTime = _controller!.value.position;
-          });
-        }
 
-        // Restart video when it ends
-        if (_controller!.value.isInitialized &&
-            _controller!.value.position == _controller!.value.duration) {
-          _controller!.seekTo(Duration.zero);
-          _controller!.play();
+            // Check if the video has ended
+            if (_controller!.value.position >= _controller!.value.duration) {
+              // Move to the next video if available
+              if (_currentVideoIndex + 1 < widget.urls.length) {
+                _currentVideoIndex++;
+                // Dispose of the current controller and initialize the next video
+                _controller!.dispose();
+                _initializeVideo();
+              } else {
+                // Optionally handle end of playlist
+                _controller!.pause();
+                _isPlaying = false;
+              }
+            }
+          });
         }
       });
     });
-
-    // Uncomment and modify this to show modal bottom sheet when needed
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   showModalBottomSheet(
-    //     context: context,
-    //     builder: (context) {
-    //       return ListModals();
-    //     },
-    //   );
-    // });
   }
 
   @override
@@ -90,33 +103,34 @@ class _VideoListScreenState extends State<VideoListScreen> {
     super.dispose();
   }
 
+  void _changePlaybackSpeed(double speed) {
+    if (_controller != null && _controller!.value.isInitialized) {
+      setState(() {
+        _playbackSpeed = speed;
+        _controller!
+            .setPlaybackSpeed(_playbackSpeed); // Set the new playback speed
+      });
+    }
+  }
+
   void _togglePlayPause() {
     if (_controller == null) return;
-
     if (_isPlaying) {
       _controller!.pause();
-
-      // If video is paused, don't hide the control icon
       setState(() {
         _isPlaying = false;
-        _showControlIcon = true; // Keep the control icon visible
+        _showControlIcon = true; // Keep control icon visible when paused
       });
-
-      // Cancel any running timer when the video is paused
+      // Cancel timer when paused
       _hideControlIconTimer?.cancel();
     } else {
       _controller!.play();
-
-      // If video is playing, hide the control icon after 2 seconds
       setState(() {
         _isPlaying = true;
-        _showControlIcon = true; // Show the control icon temporarily
+        _showControlIcon = true; // Show control icon temporarily
       });
-
-      // Cancel any previous timers to avoid multiple timers
+      // Start a timer to hide control icon after a delay
       _hideControlIconTimer?.cancel();
-
-      // Start a new timer to hide the control icon after 2 seconds
       _hideControlIconTimer = Timer(const Duration(seconds: 2), () {
         if (mounted) {
           setState(() {
@@ -131,6 +145,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
     if (_controller != null && _controller!.value.isInitialized) {
       setState(() {
         _sliderValue = value;
+        // Seek to the new position
         _controller!.seekTo(Duration(seconds: value.toInt()));
       });
     }
@@ -138,34 +153,14 @@ class _VideoListScreenState extends State<VideoListScreen> {
 
   void _onIconPressed() {
     setState(() {
-      isLiked = !isLiked;
+      isLiked = !isLiked; // Toggle like status
     });
   }
 
   void _onStarPressed() {
     setState(() {
-      isBookmark = !isBookmark;
+      isBookmark = !isBookmark; // Toggle bookmark status
     });
-  }
-
-  void _onDoubleTap() {
-    setState(() {
-      isLiked = !isLiked;
-    });
-  }
-
-  void _showModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return ListModals();
-      },
-    );
-  }
-
-  void _shareVideo(String episodeName) {
-    final videoUrl = episodeName;
-    Share.share('$videoUrl');
   }
 
   String _formatDuration(Duration duration) {
@@ -177,52 +172,111 @@ class _VideoListScreenState extends State<VideoListScreen> {
 
   void _seekForward5Seconds() {
     if (_controller != null && _controller!.value.isInitialized) {
-      if (!mounted) return;
       final currentPosition = _controller!.value.position;
       final newPosition = currentPosition + const Duration(seconds: 5);
       final maxDuration = _controller!.value.duration;
       final seekPosition =
           newPosition > maxDuration ? maxDuration : newPosition;
-      _controller!.seekTo(seekPosition);
       setState(() {
+        // Seek to new position and update slider value
         _sliderValue = seekPosition.inSeconds.toDouble();
+        _controller!.seekTo(seekPosition);
       });
     }
   }
 
   void _seekReplay5Seconds() {
     if (_controller != null && _controller!.value.isInitialized) {
-      if (!mounted) return;
       final currentPosition = _controller!.value.position;
       final newPosition = currentPosition - const Duration(seconds: 5);
       final seekPosition =
           newPosition < Duration.zero ? Duration.zero : newPosition;
-      _controller!.seekTo(seekPosition);
       setState(() {
+        // Seek to new position and update slider value
         _sliderValue = seekPosition.inSeconds.toDouble();
+        _controller!.seekTo(seekPosition);
       });
     }
+  }
+
+  void _showModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return ListModals(
+          urls: widget.urls,
+          initialSelectedIndex: _currentVideoIndex,
+        );
+      },
+    ).then((selectedIndex) {
+      if (selectedIndex != null) {
+        setState(() {
+          _currentVideoIndex = selectedIndex;
+          _initializeVideo(); // Initialize the selected video
+        });
+      }
+    });
+  }
+
+  void _shareVideo(String episodeUrl) {
+    Share.share(episodeUrl);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(56), // Default AppBar height is 56
+        preferredSize: const Size.fromHeight(56),
         child: AppBar(
           backgroundColor: AppColors.colorSecondaryDarkest,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back),
             color: AppColors.colorWhiteHighEmp,
-            onPressed: () {
-              Get.back(); // This will navigate back using GetX
-            },
+            onPressed: () => Get.back(), // Navigate back using GetX
           ),
           title: Text(
-            "Trollerz",
+            widget.movieName,
             style: TextStyle(color: AppColors.colorWhiteHighEmp),
-          ), // You can add a title or leave it blank
-          // Optional: Center the title if you need
+          ),
+          actions: [
+            Container(
+              padding: EdgeInsets.only(left: 8.0),
+              margin: EdgeInsets.only(right: 10),
+              height: 35,
+              decoration: BoxDecoration(
+                color: AppColors.colorError,
+                // Replace with your desired background color
+                borderRadius:
+                    BorderRadius.circular(4.0), // Optional: rounded corners
+              ),
+              child: DropdownButton<double>(
+                value: _playbackSpeed,
+                dropdownColor: AppColors.colorError,
+                borderRadius: BorderRadius.circular(8.0),
+
+                items: _speedOptions.map((double speed) {
+                  return DropdownMenuItem<double>(
+                    value: speed,
+                    child: Text(
+                      '${speed}x',
+                      style: TextStyle(
+                          color: AppColors.colorWhiteHighEmp, fontSize: 18),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (double? newValue) {
+                  if (newValue != null) {
+                    _changePlaybackSpeed(newValue);
+                  }
+                },
+                underline: SizedBox(),
+                iconSize: 30,
+                // Removes default underline
+                iconEnabledColor:
+                    AppColors.colorWhiteHighEmp, // Dropdown icon color
+              ),
+            ),
+          ],
         ),
       ),
       body: FutureBuilder(
@@ -243,7 +297,9 @@ class _VideoListScreenState extends State<VideoListScreen> {
                             }
                           },
                           child: GestureDetector(
-                            onDoubleTap: _onDoubleTap,
+                            onDoubleTap: () => setState(() {
+                              isLiked = !isLiked;
+                            }),
                             onTap: _togglePlayPause,
                             child: Column(
                               children: [
@@ -263,32 +319,17 @@ class _VideoListScreenState extends State<VideoListScreen> {
                       : const CircularProgressIndicator(),
                 ),
                 if (_showControlIcon)
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Positioned(
+                  Stack(alignment: Alignment.center, children: [
+                    Positioned(
                         top: MediaQuery.of(context).size.height / 3,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Replay Button
                             IconButton(
                               onPressed: _seekReplay5Seconds,
-                              icon: Icon(
-                                Icons.replay_5,
-                                size: 50,
-                                color: Colors.white70,
-                                shadows: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.5),
-                                    spreadRadius: 2,
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
+                              icon: const Icon(Icons.replay_5,
+                                  size: 50, color: Colors.white70),
                             ),
-
                             GestureDetector(
                               onTap: _togglePlayPause,
                               child: Icon(
@@ -299,30 +340,14 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                 color: Colors.white70,
                               ),
                             ),
-                            // Add some spacing between the buttons
-
-                            // Forward Button
                             IconButton(
                               onPressed: _seekForward5Seconds,
-                              icon: Icon(
-                                Icons.forward_5,
-                                size: 50,
-                                color: Colors.white70,
-                                shadows: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.5),
-                                    spreadRadius: 2,
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                            ),
+                              icon: const Icon(Icons.forward_5,
+                                  size: 50, color: Colors.white70),
+                            )
                           ],
-                        ),
-                      ),
-                    ],
-                  ),
+                        )),
+                  ]),
                 Positioned(
                   left: 0,
                   right: 0,
@@ -335,16 +360,6 @@ class _VideoListScreenState extends State<VideoListScreen> {
                             padding: const EdgeInsets.only(left: 5, right: 10),
                             child: Row(
                               children: [
-                                // GestureDetector(
-                                //   onTap: _togglePlayPause,
-                                //   child: Icon(
-                                //     _isPlaying
-                                //         ? Icons.pause_rounded
-                                //         : Icons.play_arrow_rounded,
-                                //     color: Colors.white,
-                                //     size: 50,
-                                //   ),
-                                // ),
                                 Expanded(
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
@@ -369,7 +384,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                                   Colors.red.withOpacity(0.2),
                                               thumbShape:
                                                   const RoundSliderThumbShape(
-                                                      enabledThumbRadius: 4),
+                                                      enabledThumbRadius: 6),
                                               trackHeight: 2.0,
                                               overlayShape: SliderComponentShape
                                                   .noOverlay,
@@ -380,7 +395,9 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                               value: _sliderValue,
                                               min: 0.0,
                                               max: _sliderMax,
-                                              onChanged: _onSliderChanged,
+                                              onChanged: (double value) {
+                                                _onSliderChanged(value);
+                                              },
                                             ),
                                           ),
                                           Padding(
@@ -391,30 +408,6 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                                   MainAxisAlignment
                                                       .spaceBetween,
                                               children: [
-                                                // Row(
-                                                //   mainAxisSize:
-                                                //       MainAxisSize.min,
-                                                //   children: [
-                                                //     GestureDetector(
-                                                //       onTap:
-                                                //           _seekReplay5Seconds,
-                                                //       child: Icon(
-                                                //         Icons.replay_5,
-                                                //         size: 30,
-                                                //         color: Colors.white,
-                                                //       ),
-                                                //     ),
-                                                //     GestureDetector(
-                                                //       onTap:
-                                                //           _seekForward5Seconds,
-                                                //       child: Icon(
-                                                //         Icons.forward_5,
-                                                //         size: 30,
-                                                //         color: Colors.white,
-                                                //       ),
-                                                //     ),
-                                                //   ],
-                                                // ),
                                                 Row(
                                                   children: [
                                                     Text(
@@ -460,8 +453,8 @@ class _VideoListScreenState extends State<VideoListScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             TweenAnimationBuilder(
-                              tween: Tween<double>(
-                                  begin: 1.0, end: isLiked ? 1.1 : 1.0),
+                              tween:
+                                  Tween(begin: 1.0, end: isLiked ? 1.1 : 1.0),
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.elasticInOut,
                               builder: (context, double scale, child) {
@@ -471,14 +464,14 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                     onPressed: _onIconPressed,
                                     icon: Icon(
                                       Icons.favorite_rounded,
-                                      shadows: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.5),
-                                          spreadRadius: 2,
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ],
+                                      // shadows: [
+                                      //   BoxShadow(
+                                      //     color: Colors.black.withOpacity(0.5),
+                                      //     spreadRadius: 2,
+                                      //     blurRadius: 10,
+                                      //     offset: const Offset(0, 3),
+                                      //   ),
+                                      // ],
                                       size: 40,
                                       color: isLiked
                                           ? Colors.red[400]
@@ -489,7 +482,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                               },
                             ),
                             TweenAnimationBuilder(
-                              tween: Tween<double>(
+                              tween: Tween(
                                   begin: 1.0, end: isBookmark ? 1.1 : 1.0),
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.elasticInOut,
@@ -501,14 +494,14 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                     icon: Icon(
                                       Icons.star_rounded,
                                       size: 40,
-                                      shadows: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.5),
-                                          spreadRadius: 2,
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ],
+                                      // shadows: [
+                                      //   BoxShadow(
+                                      //     color: Colors.black.withOpacity(0.5),
+                                      //     spreadRadius: 2,
+                                      //     blurRadius: 10,
+                                      //     offset: const Offset(0, 3),
+                                      //   ),
+                                      // ],
                                       color: isBookmark
                                           ? Colors.amber[300]
                                           : Colors.white,
@@ -524,32 +517,33 @@ class _VideoListScreenState extends State<VideoListScreen> {
                               icon: Icon(
                                 Icons.layers,
                                 size: 40,
-                                shadows: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.5),
-                                    spreadRadius: 2,
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
+                                // shadows: [
+                                //   BoxShadow(
+                                //     color: Colors.black.withOpacity(0.5),
+                                //     spreadRadius: 2,
+                                //     blurRadius: 10,
+                                //     offset: const Offset(0, 3),
+                                //   ),
+                                // ],
                                 color: Colors.white,
                               ),
                             ),
                             IconButton(
                               onPressed: () {
-                                _shareVideo(widget.url);
+                                _shareVideo(widget
+                                    .urls[_currentVideoIndex]); // Share video
                               },
                               icon: Icon(
                                 Icons.share_rounded,
                                 size: 40,
-                                shadows: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.5),
-                                    spreadRadius: 2,
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
+                                // shadows: [
+                                //   BoxShadow(
+                                //     color: Colors.black.withOpacity(0.5),
+                                //     spreadRadius: 2,
+                                //     blurRadius: 10,
+                                //     offset: const Offset(0, 3),
+                                //   ),
+                                // ],
                                 color: Colors.white,
                               ),
                             ),

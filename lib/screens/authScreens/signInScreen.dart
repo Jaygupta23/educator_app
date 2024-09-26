@@ -1,11 +1,18 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:reelies/models/myBottomNavModel.dart';
 import 'package:reelies/models/rememberMeModel.dart';
 import 'package:reelies/screens/authScreens/signUpScreen.dart';
 import 'package:reelies/screens/interestScreen.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:reelies/screens/onboardingScreen/genreScreen.dart';
 
+import '../../main.dart';
 import '../../utils/appColors.dart';
 import '../../utils/constants.dart';
 import '../../utils/myButton.dart';
@@ -19,15 +26,106 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
   // A global key to identify the form and perform validation
   final _formfield = GlobalKey<FormState>();
+  String apiKey = dotenv.env['API_KEY'] ?? '';
 
 // Controllers to get values from text fields
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  bool isLoading = false;
 
 // A boolean flag to toggle password visibility
   var obscureText = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    final InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
+    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  Future<void> showNotification(String title, String body) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'high_importance_channel',
+      // Use the same channel ID as defined in main.dart
+      'High Importance Notifications',
+      channelDescription: 'Channel description',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin
+        .show(0, title, body, platformChannelSpecifics, payload: 'item x');
+  }
+
+  Future<void> SignInUser() async {
+    setState(() {
+      isLoading = true;
+    });
+    final url = Uri.parse("http://$apiKey:8000/user/signIn/");
+    final body = {
+      'email': emailController.text,
+      'password': passwordController.text
+    };
+    try {
+      final response = await http.post(
+        url,
+        body: jsonEncode(body),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      var responseData = jsonDecode(response.body);
+      var userData = responseData['userData'];
+      print(userData['loggedInBefore']);
+      if (userData['loggedInBefore'] == false) {
+        String userId = userData['_id'];
+        await showNotification(
+          'Log In Success',
+          'You have successfully Logged IN.',
+        );
+        emailController.clear();
+        passwordController.clear();
+        Get.offAll(() => GenreScreen(userId: userId));
+      } else if (userData['loggedInBefore'] == true) {
+        await showNotification(
+          'Log In Success',
+          'You have successfully Logged IN.',
+        );
+        emailController.clear();
+        passwordController.clear();
+        Get.offAll(() => MyBottomNavModel());
+      } else {
+        print("error in user login api");
+        String errorMessage = responseData['msg'] ?? 'LogIn failed.';
+        await showNotification('LogIn Failed', errorMessage);
+      }
+    } catch (e) {
+      print("error: $e");
+      await showNotification(
+        'Error',
+        'An error occurred during registration. Please try again.',
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,6 +169,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                     width: 296.w, // sets the width of the container
                     child: TextFormField(
+                      keyboardType: TextInputType.emailAddress,
                       controller: emailController,
                       // sets the controller for the text input field
                       validator: (value) {
@@ -234,17 +333,14 @@ class _SignInScreenState extends State<SignInScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 30),
                   child: MyButton(
-                      onPressed: () {
+                      onPressed: () async {
                         // Check if the form is valid before logging in
                         if (_formfield.currentState!.validate()) {
                           // Clear the email and password fields
-                          emailController.clear();
-                          passwordController.clear();
-                          // Navigate to the interest screen
-                          Get.offAll(const InterestScreen());
+                          await SignInUser();
                         }
                       },
-                      text: "LOGIN"),
+                      text: isLoading ? "" : "LOGIN"),
                 ),
                 SizedBox(height: 5.h),
                 InkWell(

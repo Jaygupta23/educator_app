@@ -7,7 +7,6 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import '../../models/genderDropdownModel.dart';
 import '../../utils/appColors.dart';
 
-
 class ProfileFillupScreen extends StatefulWidget {
   const ProfileFillupScreen({super.key});
 
@@ -21,13 +20,27 @@ class _ProfileFillupScreenState extends State<ProfileFillupScreen> {
     'Male',
     'Female',
   ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.colorSecondaryDarkest,
       appBar: AppBar(
-        title: const Text('Fill your profile'),
+        title: const Text(
+          'Fill your profile',
+          style: TextStyle(color: AppColors.colorSecondaryLight),
+        ),
         backgroundColor: AppColors.colorSecondaryDarkest,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          color: AppColors.colorSecondaryLight,
+          onPressed: () {
+            FocusScope.of(context).unfocus();
+            Future.delayed(Duration(milliseconds: 200), () {
+              Get.back();
+            }); // This will navigate back using GetX
+          },
+        ),
         elevation: 0,
       ),
       body: Padding(
@@ -48,22 +61,17 @@ class _ProfileFillupScreenState extends State<ProfileFillupScreen> {
               SizedBox(height: 40.h),
               Center(
                 child: Container(
-                  decoration:  BoxDecoration(
+                  decoration: BoxDecoration(
                       color: AppColors.colorGrey,
-                      borderRadius: BorderRadius.circular(8)
-                  ),
+                      borderRadius: BorderRadius.circular(8)),
                   width: double.infinity,
                   child: TextFormField(
-
-                    style: const TextStyle(
-                        color: AppColors.colorDisabled),
+                    style: const TextStyle(color: AppColors.colorDisabled),
                     decoration: InputDecoration(
                       hintText: 'Full Name',
-                      hintStyle: const TextStyle(
-                          color: AppColors.colorDisabled),
-
-                      contentPadding:
-                      const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                      hintStyle:
+                          const TextStyle(color: AppColors.colorDisabled),
+                      contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: const BorderSide(
@@ -85,22 +93,17 @@ class _ProfileFillupScreenState extends State<ProfileFillupScreen> {
               SizedBox(height: 10.h),
               Center(
                 child: Container(
-                  decoration:  BoxDecoration(
+                  decoration: BoxDecoration(
                       color: AppColors.colorGrey,
-                      borderRadius: BorderRadius.circular(8)
-                  ),
+                      borderRadius: BorderRadius.circular(8)),
                   width: double.infinity,
                   child: TextFormField(
-
-                    style: const TextStyle(
-                        color: AppColors.colorDisabled),
+                    style: const TextStyle(color: AppColors.colorDisabled),
                     decoration: InputDecoration(
-                      hintText: 'Nick Name',
-                      hintStyle: const TextStyle(
-                          color: AppColors.colorDisabled),
-
-                      contentPadding:
-                      const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                      hintText: 'User Name',
+                      hintStyle:
+                          const TextStyle(color: AppColors.colorDisabled),
+                      contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: const BorderSide(
@@ -122,24 +125,21 @@ class _ProfileFillupScreenState extends State<ProfileFillupScreen> {
               SizedBox(height: 10.h),
               Center(
                 child: Container(
-                  decoration:  BoxDecoration(
+                  decoration: BoxDecoration(
                       color: AppColors.colorGrey,
-                      borderRadius: BorderRadius.circular(8)
-                  ),
+                      borderRadius: BorderRadius.circular(8)),
                   width: double.infinity,
                   child: TextFormField(
-
-                    style: const TextStyle(
-                        color: AppColors.colorDisabled),
+                    style: const TextStyle(color: AppColors.colorDisabled),
                     decoration: InputDecoration(
                       hintText: 'Email Address',
-                      hintStyle: const TextStyle(
-                          color: AppColors.colorDisabled),
+                      hintStyle:
+                          const TextStyle(color: AppColors.colorDisabled),
                       prefixIcon: const Icon(
-                        Icons.send_rounded, color: AppColors.colorDisabled,
+                        Icons.send_rounded,
+                        color: AppColors.colorDisabled,
                       ),
-                      contentPadding:
-                      const EdgeInsets.fromLTRB(10, 16, 10, 16),
+                      contentPadding: const EdgeInsets.fromLTRB(10, 16, 10, 16),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: const BorderSide(
@@ -175,7 +175,8 @@ class _ProfileFillupScreenState extends State<ProfileFillupScreen> {
               SizedBox(height: 10.h),
               IntlPhoneField(
                 flagsButtonPadding: const EdgeInsets.only(left: 10),
-                dropdownTextStyle: const TextStyle(color: AppColors.colorWhiteHighEmp),
+                dropdownTextStyle:
+                    const TextStyle(color: AppColors.colorWhiteHighEmp),
                 dropdownIconPosition: IconPosition.leading,
                 dropdownIcon: const Icon(
                   Icons.arrow_drop_down,
@@ -188,20 +189,21 @@ class _ProfileFillupScreenState extends State<ProfileFillupScreen> {
                   filled: true,
                   fillColor: AppColors.colorGrey,
                   hintText: 'Phone Number',
-                  counterStyle: const TextStyle(color: AppColors.colorWhiteHighEmp),
+                  counterStyle:
+                      const TextStyle(color: AppColors.colorWhiteHighEmp),
                   hintStyle: const TextStyle(color: AppColors.colorGrey),
                   border: OutlineInputBorder(
                     borderSide: const BorderSide(),
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                initialCountryCode: 'BD',
+                initialCountryCode: 'IN',
               ),
               GenderDropdownModel(),
               SizedBox(height: 70.h),
               InkWell(
                 onTap: () {
-                  Get.to( const NewPinScreen());
+                  Get.to(const NewPinScreen());
                 },
                 child: Container(
                   height: 55,

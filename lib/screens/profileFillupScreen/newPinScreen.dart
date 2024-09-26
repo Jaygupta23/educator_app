@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 
 import '../../utils/appColors.dart';
 
-
 class NewPinScreen extends StatefulWidget {
   const NewPinScreen({super.key});
 
@@ -19,8 +18,21 @@ class _NewPinScreenState extends State<NewPinScreen> {
     return Scaffold(
       backgroundColor: AppColors.colorSecondaryDarkest,
       appBar: AppBar(
-        title: const Text('Create new PIN'),
+        title: const Text(
+          'Create new PIN',
+          style: TextStyle(color: AppColors.colorSecondaryLight),
+        ),
         backgroundColor: AppColors.colorSecondaryDarkest,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          color: AppColors.colorSecondaryLight,
+          onPressed: () {
+            FocusScope.of(context).unfocus();
+            Future.delayed(Duration(milliseconds: 200), () {
+              Get.back();
+            }); // This will navigate back using GetX
+          },
+        ),
         elevation: 0,
       ),
       body: SafeArea(
@@ -30,10 +42,8 @@ class _NewPinScreenState extends State<NewPinScreen> {
             child: Column(
               children: [
                 SizedBox(height: 50.h),
-                Image.asset(
-                  'assets/images/lock.png', width: 124.w,
-                  height: 124.h
-                ),
+                Image.asset('assets/images/lock.png',
+                    width: 124.w, height: 124.h),
                 SizedBox(height: 30.h),
                 Text(
                   "Add your PIN number to make your \naccount more secure.",
@@ -66,13 +76,16 @@ class _NewPinScreenState extends State<NewPinScreen> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
-                           Get.to( const FingerPrintScreen());
+                            FocusScope.of(context).unfocus();
+                            Future.delayed(Duration(milliseconds: 200), () {
+                              Get.to(() => const FingerPrintScreen());
+                            });
                           },
                           style: ButtonStyle(
                             backgroundColor: WidgetStateProperty.all<Color>(
                                 AppColors.colorPrimary),
-                            shape: WidgetStateProperty.all<
-                                RoundedRectangleBorder>(
+                            shape:
+                                WidgetStateProperty.all<RoundedRectangleBorder>(
                               RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -83,7 +96,9 @@ class _NewPinScreenState extends State<NewPinScreen> {
                             child: Text(
                               'CONTINUE',
                               style: TextStyle(
-                                  fontSize: 16.sp, fontWeight: FontWeight.w600),
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.colorWhiteHighEmp),
                             ),
                           ),
                         ),
@@ -102,7 +117,9 @@ class _NewPinScreenState extends State<NewPinScreen> {
   Widget _textFieldOTP({required bool first, last}) {
     return Container(
       height: 45.h,
-      decoration:  BoxDecoration(color: AppColors.colorPrimaryLightest, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+          color: AppColors.colorPrimaryLightest,
+          borderRadius: BorderRadius.circular(8)),
       child: AspectRatio(
         aspectRatio: 1.4,
         child: TextField(

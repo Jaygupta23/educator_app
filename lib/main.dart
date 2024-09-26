@@ -1,11 +1,18 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:reelies/routes/routes.dart';
 import 'package:reelies/utils/appColors.dart';
 import 'package:reelies/utils/primarySwatch.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 void main() async {
   // Set the status bar color to transparent
@@ -20,12 +27,58 @@ void main() async {
   } catch (e) {
     print("Error loading .env file: $e");
   }
-  // Run the app
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize notification settings
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
+    flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+    );
+
+    // Create notification channel (important for Android)
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'high_importance_channel', // Channel ID
+      'High Importance Notifications', // Channel name
+      description: 'This channel is used for important notifications.',
+      importance: Importance.max,
+    );
+
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    androidImplementation?.createNotificationChannel(channel);
+
+    requestNotificationPermission(); // Request notification permission
+  }
+
+  Future<void> requestNotificationPermission() async {
+    // Check and request permission using permission_handler for Android
+    var status = await Permission.notification.status;
+    if (status.isDenied || status.isPermanentlyDenied) {
+      await Permission.notification.request();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

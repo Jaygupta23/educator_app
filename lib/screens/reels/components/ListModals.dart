@@ -1,41 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:reelies/screens/reels/components/EpisodeList.dart';
+import 'package:get/get.dart';
+import 'package:reelies/utils/appColors.dart';
 
-class ListModals extends StatelessWidget {
-  const ListModals({super.key});
+import '../VideoListScreen.dart';
 
-  static final List<String> episode = [
-    'Trailer',
-    '1',
-    '2',
-    '3',
-    '4',
-    '5',
-    '6',
-    '7',
-    '8',
-    '9',
-    '10',
-    '11',
-    '12',
-    '13',
-    '14',
-    '15',
-    '16',
-    '17',
-    '18',
-    '19',
-    '20',
-    '21',
-    '22',
-    '23',
-    '24',
-    '25',
-    '26',
-    '27',
-    '28',
-    '29',
-  ];
+class ListModals extends StatefulWidget {
+  final List<String> urls;
+  final int? initialSelectedIndex;
+
+  const ListModals(
+      {Key? key, required this.urls, required this.initialSelectedIndex})
+      : super(key: key);
+
+  @override
+  State<ListModals> createState() => _ListModalsState();
+}
+
+class _ListModalsState extends State<ListModals> {
+  int? _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    // Set the selected index based on the initial argument passed
+    _selectedIndex = widget
+        .initialSelectedIndex; // Assume this is passed from VideoListScreen
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +51,7 @@ class ListModals extends StatelessWidget {
                 style: TextStyle(color: Colors.white, fontSize: 17),
               ),
               Transform.translate(
-                offset: const Offset(10, -10), // Move up by 10 pixels
+                offset: const Offset(10, -10),
                 child: IconButton(
                   onPressed: () {
                     Navigator.of(context).pop();
@@ -74,18 +64,18 @@ class ListModals extends StatelessWidget {
               ),
             ],
           ),
-          const Row(
+          Row(
             children: [
               Text(
-                "0 - 29",
-                style: TextStyle(color: Colors.white),
-              )
+                "0-${widget.urls.length}",
+                style: TextStyle(color: AppColors.colorWhiteHighEmp),
+              ),
             ],
           ),
           const Divider(
             color: Colors.blueGrey,
             thickness: 1,
-            indent: 0, // No left spacing
+            indent: 0,
             endIndent: 0,
           ),
           Container(
@@ -94,7 +84,66 @@ class ListModals extends StatelessWidget {
             margin: const EdgeInsets.only(top: 4),
             child: SingleChildScrollView(
               scrollDirection: Axis.vertical,
-              child: EpisodeList(episode: episode), // Correct instantiation
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: List.generate(widget.urls.length, (index) {
+                  bool isSelected = _selectedIndex == index;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = index;
+                      });
+                      Future.delayed(Duration(milliseconds: 500), () {
+                        Get.back(
+                            result:
+                                index); // Close modal and return selected index
+                        // Get.to(() => VideoListScreen(urls: widget.urls));
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4.0),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade900,
+                        borderRadius: BorderRadius.circular(6.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: isSelected
+                                ? Colors.orange.withOpacity(0.3)
+                                : Colors.black.withOpacity(0.3),
+                            spreadRadius: 1,
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: SizedBox(
+                        width: 60,
+                        height: 50,
+                        child: Stack(alignment: Alignment.center, children: [
+                          Text(
+                            index == 0 ? "Trailer" : "${index}",
+                            style: const TextStyle(
+                                fontSize: 16, color: Colors.white),
+                          ),
+                          AnimatedPositioned(
+                            duration: const Duration(milliseconds: 300),
+                            bottom: isSelected ? 8 : -2,
+                            left: 20,
+                            child: Container(
+                              width: 22,
+                              height: 2.0,
+                              decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  );
+                }),
+              ),
             ),
           ),
         ],

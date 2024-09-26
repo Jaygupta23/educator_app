@@ -1,7 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 import 'VideoPlayerWidget.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -20,12 +17,9 @@ class _VideoScreenState extends State<VideoScreen> {
   final PageController _pageController = PageController();
   String apiKey = dotenv.env['API_KEY'] ?? '';
   final List<String> videoUrls = [
-    "https://drive.google.com/uc?export=download&id=1QsQc5JLknurEyu8oi_XfPJ4oRG_iu9SL",
-    "https://drive.google.com/uc?export=download&id=168yaRUwX9W0mCPxk6LHRzQTs-Le4dCXT",
-    "https://drive.google.com/uc?export=download&id=1AewdzLeebn-D3IsHHAj9Eqo0s6fjkhUY",
-    "https://drive.google.com/uc?export=download&id=1voVeMTKZuyoIzHHH70wTT7uAujRmq-_N",
-    "https://drive.google.com/uc?export=download&id=1OA0UGOVfVPeIl8_ycyFefC0uvLXC2UhU",
-    "https://drive.google.com/uc?export=download&id=1suA9MraPrtoG5AGm6e5n4iEA2pYaKL83",
+    "https://1326678901.vod-qcloud.com/dff364a3vodsgp1326678901/f6d76b6b1397757891053535440/chdBpZ2BuVoA.mp4",
+    "https://1326678901.vod-qcloud.com/dff364a3vodsgp1326678901/f6d75acb1397757891053535071/7gIqXzpatoMA.mp4",
+    "https://1326678901.vod-qcloud.com/941b074bvodtranssgp1326678901/fbee42ae1397757891053795120/v.f101303.mp4"
   ];
 
   @override

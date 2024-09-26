@@ -5,7 +5,6 @@ import 'package:reelies/screens/authScreens/mainSignInScreen.dart';
 import '../../models/onboardingModel.dart';
 import '../../utils/appColors.dart';
 
-
 class OnBoardingScreen extends StatefulWidget {
   const OnBoardingScreen({super.key});
 
@@ -34,9 +33,8 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.colorSecondaryDarkest,
-      body: Stack(
-        alignment: Alignment.center,
-        children: [PageView.builder(
+      body: Stack(alignment: Alignment.center, children: [
+        PageView.builder(
             controller: _controller,
             onPageChanged: (int index) {
               setState(() {
@@ -60,7 +58,6 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-
                       Padding(
                         padding: const EdgeInsets.only(top: 400),
                         child: Text(
@@ -98,7 +95,8 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                               Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (_) => const MainSignInScreen()));
+                                      builder: (_) =>
+                                          const MainSignInScreen()));
                             }
                             _controller.nextPage(
                               duration: const Duration(milliseconds: 100),
@@ -124,16 +122,16 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                 ),
               );
             }),
-          Positioned(
-            top: 420,
-
-            child: Row(
+        Positioned(
+          top: 420,
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
               contents.length,
-                  (index) => buildDot(index, context),
+              (index) => buildDot(index, context),
             ),
-          ),)
+          ),
+        )
       ]),
     );
   }
@@ -144,9 +142,10 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
       margin: const EdgeInsets.all(2),
       width: currentIndex == index ? 15.w : 8.w,
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25), color: currentIndex == index
-          ? AppColors.colorPrimary
-          : AppColors.colorBlackMidEmp),
+          borderRadius: BorderRadius.circular(25),
+          color: currentIndex == index
+              ? AppColors.colorPrimary
+              : AppColors.colorBlackMidEmp),
     );
   }
 }

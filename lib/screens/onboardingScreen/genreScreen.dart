@@ -1,10 +1,14 @@
+import 'dart:convert';
 import 'dart:math';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
-import 'package:reelies/utils/appColors.dart';
-import '../../models/myBottomNavModel.dart';
+import 'package:http/http.dart' as http;
+import 'package:reelies/screens/interestScreen.dart';
+import '../../main.dart';
+import '../../utils/appColors.dart';
 
 class GenreItem {
   final String title;
@@ -13,45 +17,151 @@ class GenreItem {
   GenreItem({required this.title, required this.imagePath});
 }
 
-final List<GenreItem> genreItems = [
-  GenreItem(title: 'Action', imagePath: 'assets/images/action.webp'),
-  GenreItem(title: 'Romance', imagePath: 'assets/images/romance.png'),
-  GenreItem(title: 'Horror', imagePath: 'assets/images/horror.jpg'),
-  GenreItem(title: 'Family', imagePath: 'assets/images/family.png'),
-  GenreItem(title: 'Adventure', imagePath: 'assets/images/adventure.jpg'),
-  GenreItem(title: 'Thriller', imagePath: 'assets/images/thriller.png'),
-  GenreItem(title: 'Comedy', imagePath: 'assets/images/comedy.jpg'),
-  GenreItem(title: 'Drama', imagePath: 'assets/images/drama.jpg'),
-];
-
 class GenreScreen extends StatefulWidget {
+  final String userId;
+
+  const GenreScreen({Key? key, required this.userId}) : super(key: key);
+
   @override
   _GenreScreenState createState() => _GenreScreenState();
 }
 
 class _GenreScreenState extends State<GenreScreen>
     with TickerProviderStateMixin {
-  List<bool> _isBalloonVisible =
-      List.generate(genreItems.length, (index) => true);
-  List<double> _balloonSizes =
-      List.generate(genreItems.length, (index) => 80.0);
-  List<bool> _isExploding = List.generate(genreItems.length, (index) => false);
+  List<Map<String, String>> imagePaths = [];
+  bool isLoading = true;
+  List<bool> _isBalloonVisible = [];
+  List<double> _balloonSizes = [];
+  List<bool> _isExploding = [];
   List<AnimationController?> _controllers = [];
   List<Animation<double>?> _animations = [];
+  String apiKey = dotenv.env['API_KEY'] ?? '';
   List<int> _selectedGenres = []; // Track selected genres
   List<AnimationController?> _shakeControllers = []; // For shaking effect
 
   @override
   void initState() {
     super.initState();
-    for (int i = 0; i < genreItems.length; i++) {
+    fetchGenreItems();
+
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    final InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
+    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  Future<void> showNotification(String title, String body) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'high_importance_channel',
+      // Use the same channel ID as defined in main.dart
+      'High Importance Notifications',
+      channelDescription: 'Channel description',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin
+        .show(0, title, body, platformChannelSpecifics, payload: 'item x');
+  }
+
+  Future<void> fetchGenreItems() async {
+    final url = Uri.parse("http://$apiKey:8000/user/genreList/");
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print("Response data: $data['genreList']");
+        final List genreSliders =
+            data['genreList']; // Adjusted to match your API response
+        setState(() {
+          imagePaths = genreSliders.map((slider) {
+            String fileLocation = slider['icon'] as String;
+            String genreName = slider['name'] as String;
+            String sliderId = slider['_id'] as String;
+            String updatedPath = fileLocation.replaceFirst(
+              'uploads/genreImage',
+              'http://$apiKey:8765/genreIcon/',
+            );
+            return {
+              'path': updatedPath,
+              'title': genreName,
+              'id': sliderId,
+            };
+          }).toList();
+
+          isLoading = false;
+          _initializeAnimations(); // Set loading to false after fetching
+        });
+      } else {
+        throw Exception(
+            'Failed to load images, status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching genre: $e');
+      setState(() {
+        isLoading = false; // Stop loading on error
+      });
+    }
+  }
+
+  Future<void> setGenres({required List<String> selectedIds}) async {
+    final url = Uri.parse("http://$apiKey:8000/user/genreSelector/");
+    final loginId = widget.userId;
+    final body = {
+      'userId': loginId,
+      'selectedGenre': selectedIds,
+    };
+    print("loginId: $loginId");
+    print(selectedIds);
+    try {
+      final response = await http.post(
+        url,
+        body: jsonEncode(body),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        // Handle successful response
+        var responseData = jsonDecode(response.body);
+        print('Genres set successfully: ${responseData}');
+        Get.offAll(() => InterestScreen(userId: loginId));
+        // await showNotification(
+        //   'Genre Added in Queue',
+        //   'You have successfully Selected Genres',
+        // );
+      } else {
+        // Handle error response
+        print('Failed to set genres: ${response.statusCode}');
+        await showNotification(
+          'Try Again',
+          'Something went wrong!',
+        );
+      }
+    } catch (e) {
+      print('Error fetching genre: $e');
+      setState(() {
+        isLoading = false; // Stop loading on error
+      });
+    }
+  }
+
+  void _initializeAnimations() {
+    for (int i = 0; i < imagePaths.length; i++) {
       _controllers.add(AnimationController(
         vsync: this,
         duration: Duration(milliseconds: 500),
       ));
       _animations.add(Tween(begin: 1.0, end: 2.0).animate(_controllers[i]!));
-
-      // Initialize shake controllers
+      _isBalloonVisible.add(true);
+      _balloonSizes.add(80.0);
+      _isExploding.add(false);
       _shakeControllers.add(AnimationController(
         vsync: this,
         duration: Duration(milliseconds: Random().nextInt(700) + 300),
@@ -63,134 +173,136 @@ class _GenreScreenState extends State<GenreScreen>
     if (!_selectedGenres.contains(index)) {
       setState(() {
         _selectedGenres.add(index); // Add index to selected genres
+        _isExploding[index] = true; // Trigger the explosion and fade effect
+      });
+      _controllers[index]?.forward().then((_) {
+        setState(() {
+          _balloonSizes[index] = 0.0; // Shrink the balloon after explosion
+          _isBalloonVisible[index] = false; // Remove balloon from visible list
+        });
+        if (_selectedGenres.length == 3 ||
+            _selectedGenres.length == imagePaths.length) {
+          _showSelectedGenresDialog(); // Show modal if at least 3 genres are selected
+        }
       });
     }
-
-    setState(() {
-      _isExploding[index] = true; // Trigger the explosion and fade effect
-    });
-
-    _controllers[index]?.forward().then((_) {
-      setState(() {
-        _balloonSizes[index] = 0.0; // Shrink the balloon after the explosion
-        _isBalloonVisible[index] =
-            false; // Remove the balloon from the visible list
-      });
-
-      if (_selectedGenres.length == 3 ||
-          _selectedGenres.length == genreItems.length) {
-        _showSelectedGenresDialog(); // Show modal if at least 3 genres are selected
-      }
-    });
   }
 
   void _showSelectedGenresDialog() {
-    bool allGenresSelected = _selectedGenres.length == genreItems.length;
-
+    bool allGenresSelected = _selectedGenres.length == imagePaths.length;
     showModalBottomSheet(
       context: context,
       isDismissible: !allGenresSelected,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Container(
-              padding: EdgeInsets.all(10.0),
-              height: MediaQuery.of(context).size.height / 3,
-              decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 5),
-                  Center(
-                    child: Text(
-                      'Selected Genres',
-                      style: TextStyle(
+            builder: (BuildContext context, StateSetter setModalState) {
+          return Container(
+            padding: EdgeInsets.all(10.0),
+            height: MediaQuery.of(context).size.height / 3,
+            decoration: BoxDecoration(
+              color: Colors.grey[900],
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 5),
+                Center(
+                  child: Text(
+                    'Selected Genres',
+                    style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                        color: Colors.white),
                   ),
-                  SizedBox(height: 20),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Wrap(
-                        spacing: 5.0,
-                        runSpacing: 2.0,
-                        children: _selectedGenres.map((index) {
-                          final genreItem = genreItems[index];
-                          return Container(
-                            width: 110,
-                            child: Chip(
-                              label: Text(
-                                genreItem.title,
+                ),
+                SizedBox(height: 20),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Wrap(
+                      spacing: 5.0,
+                      runSpacing: 2.0,
+                      children: _selectedGenres.map((index) {
+                        final genreItem = imagePaths[index];
+                        return Container(
+                          width: 110,
+                          child: Chip(
+                            label: Text(genreItem['title']!,
                                 style: TextStyle(
-                                    color: AppColors
-                                        .colorWhiteHighEmp), // Ensure text is visible
-                              ),
-                              avatar: CircleAvatar(
+                                    color: AppColors.colorWhiteHighEmp)),
+                            avatar: CircleAvatar(
                                 backgroundImage:
-                                    AssetImage(genreItem.imagePath),
-                              ),
-                              deleteIcon: Icon(Icons.close,
-                                  size: 20, color: AppColors.colorWhiteHighEmp),
-                              onDeleted: () {
-                                setModalState(() {
-                                  _selectedGenres.remove(index);
-                                });
-                                setState(() {
-                                  _isBalloonVisible[index] =
-                                      true; // Show bubble back on screen
-                                  _controllers[index]
-                                      ?.reset(); // Reset animation
-                                  _isExploding[index] = false; // Stop explosion
-                                });
-                                if (_selectedGenres.isEmpty) {
-                                  Navigator.of(context).pop();
-                                }
-                              },
-                              backgroundColor: AppColors.colorSecondaryDarkest,
-                              // Set the background color to transparent
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8)),
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                                    NetworkImage(genreItem['path']!)),
+                            deleteIcon: Icon(Icons.close,
+                                size: 20, color: AppColors.colorWhiteHighEmp),
+                            onDeleted: () {
+                              setModalState(() {
+                                _selectedGenres.remove(index);
+                              });
+                              setState(() {
+                                _isBalloonVisible[index] =
+                                    true; // Show balloon back on screen
+                                _controllers[index]?.reset(); // Reset animation
+                                _isExploding[index] = false; // Stop explosion
+                              });
+                              if (_selectedGenres.isEmpty) {
+                                Navigator.of(context).pop();
+                              }
+                            },
+                            backgroundColor: AppColors.colorSecondaryDarkest,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ),
-                  SizedBox(height: 20),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Get.offAll(() => const MyBottomNavModel());
-                      },
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: AppColors.colorPrimary,
-                        padding: EdgeInsets.symmetric(horizontal: 40),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6.0),
-                        ),
-                      ),
-                      child: Text(
-                        'Continue',
-                        style: TextStyle(fontSize: 16),
+                ),
+                SizedBox(height: 20),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      print(_selectedGenres);
+                      List<String> selectedGenreItem = _selectedGenres
+                          .map((index) {
+                            final genreItem = imagePaths[index];
+                            // Check if genreItem is not null before accessing 'id'
+                            return genreItem != null
+                                ? genreItem['id'] as String
+                                : '';
+                          })
+                          .where(
+                              (id) => id.isNotEmpty) // Filter out empty strings
+                          .toList();
+
+                      try {
+                        await setGenres(selectedIds: selectedGenreItem);
+                        print("Genres have been successfully set.");
+                        // Optionally navigate to another screen or show a success message here
+                      } catch (error) {
+                        print("Error setting genres: $error");
+                        // Handle error (e.g., show a notification)
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.colorPrimary,
+                      padding: EdgeInsets.symmetric(horizontal: 40),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6.0),
                       ),
                     ),
+                    child: Text(
+                      'Continue',
+                      style: TextStyle(fontSize: 16),
+                    ),
                   ),
-                ],
-              ),
-            );
-          },
-        );
+                ),
+              ],
+            ),
+          );
+        });
       },
     );
   }
@@ -274,7 +386,7 @@ class _GenreScreenState extends State<GenreScreen>
                             return SizedBox.shrink();
                           }
 
-                          final genreItem = genreItems[actualIndex];
+                          final genreItem = imagePaths[actualIndex];
 
                           final int duration = random.nextInt(700) + 300;
 
@@ -328,8 +440,8 @@ class _GenreScreenState extends State<GenreScreen>
                                             left: -1,
                                             right: -1,
                                             child: ClipOval(
-                                              child: Image.asset(
-                                                genreItem.imagePath,
+                                              child: Image.network(
+                                                genreItem['path']!,
                                                 fit: BoxFit.cover,
                                                 width: balloonSize * 1.1,
                                                 height: balloonSize * 1.7,
@@ -351,7 +463,7 @@ class _GenreScreenState extends State<GenreScreen>
                                           Positioned(
                                             bottom: 20,
                                             child: Text(
-                                              genreItem.title,
+                                              genreItem['title']!,
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 color: Colors.white,

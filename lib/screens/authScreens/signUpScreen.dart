@@ -1,13 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:reelies/models/myBottomNavModel.dart';
-import 'package:reelies/models/rememberMeModel.dart';
-import 'package:reelies/screens/authScreens/signInScreen.dart';
 import 'package:get/get.dart';
-import 'package:reelies/screens/onboardingScreen/genreScreen.dart';
-
-
-
+import 'package:http/http.dart' as http;
+import '../../models/myBottomNavModel.dart';
+import '../../models/rememberMeModel.dart';
+import '../../screens/authScreens/signInScreen.dart';
 import '../../utils/appColors.dart';
 import '../../utils/constants.dart';
 import '../../utils/myButton.dart';
@@ -20,19 +20,104 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  // This code block defines variables for a form that likely has email and password input fields:
-  final _formfield = GlobalKey<
-      FormState>(); // GlobalKey to access and manipulate the state of a form
-  final emailController =
-      TextEditingController(); // Controller for email input field
-  final passwordController =
-      TextEditingController(); // Controller for password input field
-  final passwordController2 =
-      TextEditingController(); // Controller for confirming password input field
-  var obscureText =
-      true; // Flag to indicate whether the password is currently hidden or not
-  var obscureText2 =
-      true; // Flag to indicate whether the confirm password is currently hidden or not
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+  String apiKey = dotenv.env['API_KEY'] ?? '';
+  final _formfield = GlobalKey<FormState>();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final passwordController2 = TextEditingController();
+
+  var obscureText = true;
+  var obscureText2 = true;
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    final InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
+    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  Future<void> showNotification(String title, String body) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'high_importance_channel',
+      // Use the same channel ID as defined in main.dart
+      'High Importance Notifications',
+      channelDescription: 'Channel description',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin
+        .show(0, title, body, platformChannelSpecifics, payload: 'item x');
+  }
+
+  Future<void> createUser() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final url = Uri.parse("http://$apiKey:8000/user/register/");
+    final body = {
+      'email': emailController.text,
+      'password': passwordController.text,
+      'confirmPassword': passwordController2.text,
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        body: jsonEncode(body),
+        headers: {'Content-Type': 'application/json'},
+      );
+      var responseData = jsonDecode(response.body);
+      if (responseData['success'] == true) {
+        print("user created ");
+        await showNotification(
+          'Registration Success',
+          'You have successfully registered.',
+        );
+        emailController.clear();
+        passwordController.clear();
+        passwordController2.clear();
+        Get.offAll(() => const SignInScreen());
+      } else {
+        print("error in user created api");
+        String errorMessage = responseData['message'] ?? 'Registration failed.';
+        await showNotification('Registration Failed', errorMessage);
+      }
+    } catch (e) {
+      print("error: $e");
+      await showNotification(
+        'Error',
+        'An error occurred during registration. Please try again.',
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    passwordController2.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,15 +159,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         borderRadius: BorderRadius.circular(8)),
                     width: 296.w, // width of container
                     child: TextFormField(
+                      keyboardType: TextInputType.emailAddress,
                       controller: emailController,
                       // Controller for email input field
                       validator: (value) {
                         bool emailValid = RegExp(
-                                r"^WS{1,2}:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:56789")
+                                r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
                             .hasMatch(value!);
                         if (value.isEmpty) {
                           return "Enter Email";
-                        } else if (emailValid) {
+                        } else if (!emailValid) {
                           return "Enter valid Email";
                         }
                         return null;
@@ -150,6 +236,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         borderRadius: BorderRadius.circular(
                             8)), // rounded corners of the container
                     child: TextFormField(
+                      keyboardType: TextInputType.visiblePassword,
                       obscureText: obscureText,
                       // hides the entered text
                       controller: passwordController,
@@ -159,7 +246,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         if (value!.isEmpty) {
                           return "Enter Password"; // error message when no value is entered
                         } else if (passwordController.text.length < 6) {
-                          return "Password length should be more than 6 characters"; // error message when password is less than 6 characters long
+                          return "Password length should be more than 6 chars..";
+                        } else if (passwordController2.text !=
+                            passwordController.text) {
+                          return "Password and Confirm Password does not Match";
                         }
                         return null;
                       },
@@ -243,13 +333,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         color: AppColors.colorGrey,
                         borderRadius: BorderRadius.circular(8)),
                     child: TextFormField(
+                      keyboardType: TextInputType.visiblePassword,
                       obscureText: obscureText2,
                       controller: passwordController2,
                       validator: (value) {
                         if (value!.isEmpty) {
-                          return "Enter Password";
+                          return "Enter Confirm Password";
                         } else if (passwordController2.text.length < 6) {
-                          return "Password length should be more than 6 characters";
+                          return "Password length should be more than 6 chars..";
+                        } else if (passwordController2.text !=
+                            passwordController.text) {
+                          return "Password and Confirm Password does not Match";
                         }
                         return null;
                       },
@@ -300,7 +394,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(
-                            color: AppColors.colorError,
+                            color: AppColors.colorPrimaryDark,
                             width: 1,
                           ),
                         ),
@@ -308,7 +402,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         focusedErrorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(
-                            color: AppColors.colorError,
+                            color: AppColors.colorPrimaryDark,
                             width: 1,
                           ),
                         ),
@@ -322,17 +416,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 30),
                   child: MyButton(
-                      onPressed: () {
+                      onPressed: () async {
                         // Validate the form field
                         if (_formfield.currentState!.validate()) {
                           // Clear the email and password fields
-                          emailController.clear();
-                          passwordController.clear();
+                          FocusScope.of(context).unfocus();
+                          await createUser();
                           // Navigate to the MyBottomNavModel screen
-                          Get.offAll(() => GenreScreen());
                         }
                       },
-                      text: "CREATE ACCOUNT"),
+                      text: isLoading ? "" : "CREATE ACCOUNT"),
                 ),
 
                 SizedBox(height: 5.h),

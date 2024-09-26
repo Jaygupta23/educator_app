@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:reelies/screens/reels/VideoListScreen.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:share_plus/share_plus.dart';
@@ -346,7 +344,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                           ),
                           IconButton(
                             onPressed: () {
-                              Get.to(() => VideoListScreen(url: widget.url));
+                              // Get.to(() => VideoListScreen(urls: widget.url));
                             },
                             icon: Icon(
                               Icons.layers,

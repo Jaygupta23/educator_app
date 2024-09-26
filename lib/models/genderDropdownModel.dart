@@ -61,7 +61,7 @@ class _GenderDropdownModelState extends State<GenderDropdownModel> {
               ),
               iconDisabledColor: Colors.transparent,
               icon: const Padding(
-                padding: EdgeInsets.only(left: 230),
+                padding: EdgeInsets.only(left: 270),
                 child: Icon(Icons.arrow_drop_down,
                     color: AppColors.colorWhiteHighEmp),
               ), // add your own icon here
