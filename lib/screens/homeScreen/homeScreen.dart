@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _currentPageIndex = 0; // Initialize current page index
     _controllers = []; // Initialize controllers list
     _pageController = PageController(
-        viewportFraction: 0.85,
+        viewportFraction: 0.8,
         initialPage: _currentPageIndex); // Initialize PageController
     fetchHeroSlider(); // Fetch images on initialization
   }
@@ -85,13 +85,14 @@ class _HomeScreenState extends State<HomeScreen> {
           imagePaths = sliders.map((slider) {
             String fileLocation = slider['fileLocation'] as String? ?? '';
             String heroSliderType = slider['type'] as String? ?? '';
-            String heroSliderName = slider['name'] as String? ?? '';
-            String sliderId = slider['_id'] as String? ?? '';
+            String heroSliderName = (slider['name'] ?? '').toString();
+            String sliderId = (slider['_id'] ?? '').toString();
+            String slideEpisode = (slider['parts'] ?? '0').toString();
             String sliderTrailer = slider['trailerUrl'] as String? ?? '';
 
             // Log for debugging
             print(
-                "Slider parsed: $fileLocation, $heroSliderType, $heroSliderName, $sliderTrailer");
+                "Slider parsed: $fileLocation, $heroSliderType, $slideEpisode, $heroSliderName, $sliderTrailer");
 
             String updatedPath = fileLocation.replaceFirst(
                 'uploads/thumbnail/', 'http://$apiKey:8765/thumbnails/');
@@ -101,41 +102,46 @@ class _HomeScreenState extends State<HomeScreen> {
               'name': heroSliderName,
               'id': sliderId,
               'trailerUrl': sliderTrailer,
+              'episode': slideEpisode,
             };
           }).toList();
 
           // Initialize video controllers for trailers
-          _controllers = imagePaths
-              .map((videoUrl) {
-                String? trailerUrl = videoUrl['trailerUrl'];
-                if (videoUrl['type'] == 'Trailer' &&
-                    trailerUrl != null &&
-                    trailerUrl.isNotEmpty) {
-                  try {
-                    VideoPlayerController controller =
-                        VideoPlayerController.network(trailerUrl)
-                          ..initialize().then((_) {
-                            setState(
-                                () {}); // Refresh the widget after initialization
-                          });
-                    controller.addListener(() {
-                      if (controller.value.position ==
-                          controller.value.duration) {
-                        controller.seekTo(Duration.zero);
-                        controller.play(); // Loop the video
-                      }
-                    });
-                    return controller; // Return the initialized controller
-                  } catch (e) {
-                    print('Error initializing video player: $e');
-                    return null; // Return null in case of error
+          _controllers = List<VideoPlayerController>.filled(
+              imagePaths.length, VideoPlayerController.network(''));
+
+          for (int i = 0; i < imagePaths.length; i++) {
+            String? trailerUrl = imagePaths[i]['trailerUrl'];
+            if (imagePaths[i]['type'] == 'Trailer' &&
+                trailerUrl != null &&
+                trailerUrl.isNotEmpty) {
+              try {
+                VideoPlayerController controller =
+                    VideoPlayerController.network(trailerUrl)
+                      ..initialize().then((_) {
+                        if (mounted) {
+                          setState(
+                              () {}); // Refresh the widget after initialization
+                        }
+                      });
+                controller.addListener(() {
+                  if (controller.value.position == controller.value.duration) {
+                    controller.seekTo(Duration.zero);
+                    controller.play(); // Loop the video
                   }
-                } else {
-                  return null; // Return null for non-trailer types or invalid trailers
-                }
-              })
-              .whereType<VideoPlayerController>()
-              .toList(); // Filter out null values
+                });
+                _controllers[i] =
+                    controller; // Store the initialized controller
+              } catch (e) {
+                print('Error initializing video player: $e');
+                _controllers[i] = VideoPlayerController.network(
+                    ''); // Assign a default or placeholder controller
+              }
+            } else {
+              _controllers[i] = VideoPlayerController.network(
+                  ''); // Assign a default or placeholder controller
+            }
+          }
 
           isLoading = false; // Stop loading once data is fetched
         });
@@ -147,10 +153,22 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       print('Error fetching sliders: $e');
-      setState(() {
-        isLoading = false; // Stop loading on error
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false; // Stop loading on error
+        });
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    for (var controller in _controllers) {
+      controller.dispose(); // Dispose of each video controller
+    }
+    _autoSlideTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
   }
 
   // For SocketException
@@ -206,16 +224,6 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     });
-  }
-
-  @override
-  void dispose() {
-    for (var controller in _controllers) {
-      controller.dispose();
-    }
-    _autoSlideTimer?.cancel();
-    _pageController.dispose();
-    super.dispose();
   }
 
   @override
@@ -276,26 +284,21 @@ class _HomeScreenState extends State<HomeScreen> {
                           : imagePaths.isNotEmpty
                               ? Stack(
                                   children: [
-                                    // Background with dynamic blur effect
                                     Positioned.fill(
                                       child: AnimatedSwitcher(
                                         duration:
                                             const Duration(milliseconds: 500),
                                         child: CachedNetworkImage(
-                                          imageUrl: imagePaths[
-                                                      _currentPageIndex %
+                                          imageUrl: imagePaths.isNotEmpty
+                                              ? imagePaths[_currentPageIndex %
                                                           imagePaths.length]
-                                                  ['path'] ??
-                                              'https://via.placeholder.com/150',
-                                          // Fallback image if imagePaths is empty
-                                          key: ValueKey<String>(
-                                            imagePaths.isNotEmpty
-                                                ? imagePaths[_currentPageIndex %
-                                                            imagePaths.length]
-                                                        ['path'] ??
-                                                    'fallback_image'
-                                                : 'fallback_image',
-                                          ),
+                                                      ['path'] ??
+                                                  'https://via.placeholder.com/150'
+                                              : 'https://via.placeholder.com/150',
+                                          key: ValueKey(imagePaths.isNotEmpty
+                                              ? imagePaths[_currentPageIndex %
+                                                  imagePaths.length]['path']
+                                              : 'fallback_image'),
                                           fit: BoxFit.cover,
                                           color: Colors.black.withOpacity(0.5),
                                           colorBlendMode: BlendMode.darken,
@@ -306,7 +309,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                     ),
-
                                     Positioned.fill(
                                       child: BackdropFilter(
                                         filter: ImageFilter.blur(
@@ -315,12 +317,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                             color: Colors.transparent),
                                       ),
                                     ),
-                                    // Carousel slider with GestureDetector for hold functionality
                                     Align(
                                       alignment: Alignment.center,
                                       child: GestureDetector(
-                                        onLongPress: () {
-                                          // Ensure _currentPageIndex is valid and within bounds
+                                        onLongPress: () async {
+                                          // Ensure _currentPageIndex is valid and within bounds of imagePaths
                                           if (_currentPageIndex <
                                               imagePaths.length) {
                                             final sliderType =
@@ -330,32 +331,209 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 imagePaths[_currentPageIndex]
                                                     ['trailerUrl'];
 
-                                            // Check if the current slider type is 'Trailer' and if the trailer URL is valid
+                                            // Proceed only if the current slider type is 'Trailer' and the trailer URL is valid
                                             if (sliderType == 'Trailer' &&
                                                 trailerUrl != null &&
                                                 trailerUrl.isNotEmpty) {
-                                              // Ensure a valid controller exists before playing
-                                              final controller = _controllers[
-                                                  _currentPageIndex %
-                                                      _controllers.length];
-                                              if (controller != null &&
-                                                  controller
-                                                      .value.isInitialized) {
-                                                setState(() {
-                                                  _isHolding = true;
-                                                  controller
-                                                      .play(); // Play the trailer on long press
-                                                });
+                                              print(
+                                                  "Trailer URL found: $trailerUrl");
+
+                                              // Ensure that the _currentPageIndex is within bounds of _controllers list
+                                              if (_currentPageIndex <
+                                                  _controllers.length) {
+                                                final controller = _controllers[
+                                                    _currentPageIndex];
+
+                                                if (controller == null ||
+                                                    !controller
+                                                        .value.isInitialized) {
+                                                  // Initialize the controller asynchronously
+                                                  print(
+                                                      "Initializing video controller for URL: $trailerUrl");
+                                                  _controllers[
+                                                          _currentPageIndex] =
+                                                      VideoPlayerController
+                                                          .network(trailerUrl);
+
+                                                  try {
+                                                    await _controllers[
+                                                            _currentPageIndex]
+                                                        .initialize();
+                                                    setState(() {
+                                                      _isHolding = true;
+                                                      _controllers[
+                                                              _currentPageIndex]
+                                                          .play(); // Play the trailer on long press
+                                                    });
+                                                    print(
+                                                        "Video controller initialized and playing.");
+                                                  } catch (error) {
+                                                    print(
+                                                        "Error initializing video controller: $error");
+                                                  }
+                                                } else {
+                                                  // Play the video if already initialized
+                                                  setState(() {
+                                                    _isHolding = true;
+                                                    controller
+                                                        .play(); // Play the trailer on long press
+                                                    print(
+                                                        "Playing video from initialized controller.");
+                                                  });
+                                                }
                                               } else {
                                                 print(
-                                                    "Controller not initialized for this trailer.");
+                                                    "Invalid _currentPageIndex for _controllers: $_currentPageIndex");
                                               }
                                             } else {
                                               print(
                                                   "No valid trailer URL available for this slider.");
                                             }
+                                          } else {
+                                            print(
+                                                "Invalid page index: $_currentPageIndex");
                                           }
                                         },
+                                        onLongPressUp: () {
+                                          if (_currentPageIndex <
+                                              _controllers.length) {
+                                            final controller = _controllers[
+                                                _currentPageIndex %
+                                                    _controllers.length];
+                                            if (controller != null &&
+                                                controller
+                                                    .value.isInitialized) {
+                                              setState(() {
+                                                _isHolding = false;
+                                                controller
+                                                    .pause(); // Pause the trailer on long press release
+                                                _startAutoSlideTimer(); // Restart auto-slide after release
+                                              });
+                                            } else {
+                                              print(
+                                                  "Controller not initialized for this trailer.");
+                                            }
+                                          }
+                                        },
+                                        child: PageView.builder(
+                                          controller: _pageController,
+                                          onPageChanged: (index) {
+                                            setState(() {
+                                              if (_controllers.isNotEmpty &&
+                                                  _currentPageIndex >= 0) {
+                                                _controllers[_currentPageIndex %
+                                                        _controllers.length]
+                                                    .pause();
+                                              }
+
+                                              if (imagePaths.isNotEmpty) {
+                                                _currentPageIndex =
+                                                    index % imagePaths.length;
+                                              } else {
+                                                _currentPageIndex =
+                                                    0; // Set a default value if imagePaths is empty
+                                              }
+
+                                              if (_isHolding &&
+                                                  _controllers.isNotEmpty &&
+                                                  _currentPageIndex >= 0) {
+                                                _controllers[_currentPageIndex]
+                                                    .play();
+                                              }
+                                            });
+                                          },
+                                          itemBuilder: (context, index) {
+                                            if (imagePaths.isNotEmpty) {
+                                              final actualIndex =
+                                                  index % imagePaths.length;
+                                              final isCurrentPage =
+                                                  actualIndex ==
+                                                      _currentPageIndex;
+                                              final sliderType =
+                                                  imagePaths[actualIndex]
+                                                      ['type'];
+
+                                              return Transform.scale(
+                                                scale: isCurrentPage ? 1 : 0.9,
+                                                child: AnimatedContainer(
+                                                  duration: const Duration(
+                                                      milliseconds: 300),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.transparent,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                    boxShadow: isCurrentPage
+                                                        ? [
+                                                            BoxShadow(
+                                                                blurRadius: 10,
+                                                                color: Colors
+                                                                    .black54,
+                                                                spreadRadius: 5)
+                                                          ]
+                                                        : [],
+                                                  ),
+                                                  child: Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              bottom: 3.0),
+                                                      child: ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(10),
+                                                        child: _isHolding &&
+                                                                isCurrentPage &&
+                                                                sliderType ==
+                                                                    'Trailer' &&
+                                                                _currentPageIndex <
+                                                                    _controllers
+                                                                        .length &&
+                                                                _controllers[
+                                                                        _currentPageIndex]
+                                                                    .value
+                                                                    .isInitialized
+                                                            ? AspectRatio(
+                                                                aspectRatio:
+                                                                    _controllers[
+                                                                            _currentPageIndex]
+                                                                        .value
+                                                                        .aspectRatio,
+                                                                child: VideoPlayer(
+                                                                    _controllers[
+                                                                        _currentPageIndex]),
+                                                              )
+                                                            : CachedNetworkImage(
+                                                                imageUrl: imagePaths[
+                                                                            actualIndex]
+                                                                        [
+                                                                        'path'] ??
+                                                                    'https://via.placeholder.com/150',
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                                placeholder: (context,
+                                                                        url) =>
+                                                                    CircularProgressIndicator(),
+                                                                errorWidget: (context,
+                                                                        url,
+                                                                        error) =>
+                                                                    Icon(Icons
+                                                                        .error),
+                                                              ),
+                                                      )),
+                                                ),
+                                              );
+                                            }
+
+                                            return Container(); // Return empty container if no images are available
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      bottom: 10,
+                                      left: MediaQuery.of(context).size.width *
+                                          0.15,
+                                      child: GestureDetector(
                                         onTap: () async {
                                           // Ensure _currentPageIndex is valid and within bounds
                                           if (_currentPageIndex <
@@ -400,132 +578,72 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 "Current page index is out of bounds");
                                           }
                                         },
-                                        onLongPressUp: () {
-                                          if (_currentPageIndex <
-                                              _controllers.length) {
-                                            final controller = _controllers[
-                                                _currentPageIndex %
-                                                    _controllers.length];
-                                            if (controller != null &&
-                                                controller
-                                                    .value.isInitialized) {
-                                              setState(() {
-                                                _isHolding = false;
-                                                controller
-                                                    .pause(); // Pause the trailer on long press release
-                                                _startAutoSlideTimer(); // Restart auto-slide after release
-                                              });
-                                            } else {
-                                              print(
-                                                  "Controller not initialized for this trailer.");
-                                            }
-                                          }
-                                        },
-                                        child: PageView.builder(
-                                          controller: _pageController,
-                                          onPageChanged: (index) {
-                                            setState(() {
-                                              // Pause previous video
-                                              _controllers[_currentPageIndex %
-                                                      _controllers.length]
-                                                  .pause();
-                                              _currentPageIndex =
-                                                  index % imagePaths.length;
-
-                                              // Play the new current page video if holding
-                                              if (_isHolding) {
-                                                _controllers[_currentPageIndex]
-                                                    .play();
-                                              }
-                                            });
-                                          },
-                                          itemBuilder: (context, index) {
-                                            if (imagePaths.isNotEmpty) {
-                                              final actualIndex =
-                                                  index % imagePaths.length;
-                                              final isCurrentPage =
-                                                  actualIndex ==
-                                                      _currentPageIndex;
-                                              final sliderType =
-                                                  imagePaths[actualIndex]
-                                                      ['type'];
-                                              return Transform.scale(
-                                                scale: isCurrentPage ? 1 : 0.9,
-                                                child: AnimatedContainer(
-                                                  duration: const Duration(
-                                                      milliseconds: 300),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.transparent,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            10),
-                                                    boxShadow: isCurrentPage
-                                                        ? [
-                                                            BoxShadow(
-                                                              blurRadius: 10,
-                                                              color: AppColors
-                                                                  .colorSecondaryDarkest,
-                                                              spreadRadius: 5,
-                                                            )
-                                                          ]
-                                                        : [],
-                                                  ),
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                            bottom: 3.0),
-                                                    child: ClipRRect(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              10),
-                                                      child: _isHolding &&
-                                                              isCurrentPage &&
-                                                              sliderType ==
-                                                                  'Trailer'
-                                                          ? (_controllers[
-                                                                      _currentPageIndex]
-                                                                  .value
-                                                                  .isInitialized
-                                                              ? AspectRatio(
-                                                                  aspectRatio:
-                                                                      _controllers[
-                                                                              _currentPageIndex]
-                                                                          .value
-                                                                          .aspectRatio,
-                                                                  child: VideoPlayer(
-                                                                      _controllers[
-                                                                          _currentPageIndex]),
-                                                                )
-                                                              : Container(
-                                                                  color: Colors
-                                                                      .black))
-                                                          : CachedNetworkImage(
-                                                              imageUrl: imagePaths[
-                                                                          actualIndex]
-                                                                      [
-                                                                      'path'] ??
-                                                                  'https://via.placeholder.com/150',
-                                                              // Ensure non-null value
-                                                              fit: BoxFit.cover,
-                                                              placeholder: (context,
-                                                                      url) =>
-                                                                  CircularProgressIndicator(),
-                                                              errorWidget: (context,
-                                                                      url,
-                                                                      error) =>
-                                                                  Icon(Icons
-                                                                      .error),
-                                                            ),
-                                                    ),
-                                                  ),
+                                        child: Container(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              .7,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 8,
+                                                        horizontal: 14),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors
+                                                      .colorWhiteHighEmp
+                                                      .withOpacity(0.88),
+                                                  // Replace with AppColors.colorPrimary
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
                                                 ),
-                                              );
-                                            }
-                                            return Container();
-                                          },
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                        Icons
+                                                            .play_arrow_rounded,
+                                                        size: 25,
+                                                        color: AppColors
+                                                            .colorPrimary),
+                                                    // Replace with AppColors.colorWhiteHighEmp
+                                                    Text("Play ",
+                                                        style: TextStyle(
+                                                            fontSize: 15,
+                                                            color: AppColors
+                                                                .colorPrimary)),
+                                                    // Replace with AppColors.colorWhiteHighEmp
+                                                  ],
+                                                ),
+                                              ),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 11,
+                                                        horizontal: 14),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors
+                                                      .colorWhiteHighEmp
+                                                      .withOpacity(0.88),
+                                                  // Replace with AppColors.colorPrimary
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  "Episodes - ${imagePaths[_currentPageIndex % imagePaths.length]['episode'] ?? '0'}",
+                                                  style: TextStyle(
+                                                      fontSize: 15,
+                                                      color: AppColors
+                                                          .colorPrimary), // Replace with AppColors.colorWhiteHighEmp
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    )
+                                    ),
                                   ],
                                 )
                               : AnimatedContainer(
