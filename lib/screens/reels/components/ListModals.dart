@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:reelies/utils/appColors.dart';
 
-import '../VideoListScreen.dart';
-
 class ListModals extends StatefulWidget {
   final List<String> urls;
   final int? initialSelectedIndex;

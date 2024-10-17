@@ -8,6 +8,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:reelies/models/latestShowsModel.dart';
 import 'package:reelies/models/mostTrendingShowsModel.dart';
 import 'package:get/get.dart';
+import 'package:reelies/screens/homeScreen/filterContent.dart';
 import 'package:reelies/screens/reels/VideoListScreen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:video_player/video_player.dart';
@@ -27,39 +28,17 @@ class _HomeScreenState extends State<HomeScreen> {
   String apiKey = dotenv.env['API_KEY'] ?? '';
   bool isLoading = true;
 
-  List<String> _data = [
-    "All", // list of movie genres
-    "Movies",
-    "Drama",
-    "Thriller",
-    "Romance",
-    "Comedy",
-    "Horror",
-  ];
-
   List<VideoPlayerController> _controllers = [];
   int _currentPageIndex = 0;
   bool _isHolding = false;
+  bool _isEpisodeButtonVisible = false;
   Timer? _autoSlideTimer;
+  double _scale = 1.0; // Initial scale value
+  Color _containerColor = AppColors.colorPrimaryDark;
+  Color _containerTextColor = AppColors.colorWhiteHighEmp;
 
   // Set the initial index to a large number to simulate infinite looping
-  static const int initialPageIndex = 0;
   late final PageController _pageController;
-
-  List<String> _selectedData =
-      []; // initially empty list for selected movie genres
-
-// function to handle selection of movie genres
-  _onSelected(bool selected, String data) {
-    setState(() {
-      if (selected) {
-        _selectedData.clear(); // only one selection allowed
-        _selectedData.add(data);
-      } else {
-        _selectedData.remove(data);
-      }
-    });
-  }
 
   @override
   void initState() {
@@ -78,9 +57,8 @@ class _HomeScreenState extends State<HomeScreen> {
           await http.get(Uri.parse("http://$apiKey:8000/getSliders"));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final List sliders =
-            data['sliders'] ?? []; // Default to empty list if null
-
+        final List sliders = data['sliders'] ?? [];
+        print("data :$data");
         setState(() {
           imagePaths = sliders.map((slider) {
             String fileLocation = slider['fileLocation'] as String? ?? '';
@@ -173,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // For SocketException
 
-  Future<List<String>> fetchVideoUrls(String movieID) async {
+  Future<List<String>> fetchVideoUrls(String movieID, String trailerUrl) async {
     final url = Uri.parse('http://$apiKey:8000/getMovieData/');
 
     try {
@@ -187,14 +165,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-        final List<String> videoUrls =
-            (jsonResponse['shortsData'] as List).map((data) {
+        print(jsonResponse);
+        // Map shortsData to video URLs and replace the path
+        final List<String> videoUrls = (jsonResponse['shortsData'] as List)
+            .where((data) => data['fileLocation'] != null)
+            .map((data) {
           String videoPath = data['fileLocation'] as String;
           String updatedPath = videoPath.replaceFirst(
               'uploads/shorts/', 'http://$apiKey:8765/video/');
           return updatedPath;
         }).toList();
-        print("videos:$videoUrls");
+
+        // Add the trailerUrl at the 0th index of videoUrls
+        videoUrls.insert(0, trailerUrl);
+
+        print("videos: $videoUrls");
         return videoUrls;
       } else {
         print('Server error: ${response.statusCode} - ${response.body}');
@@ -215,8 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!_isHolding && imagePaths.isNotEmpty) {
         // Check if imagePaths is not empty
         setState(() {
-          _currentPageIndex =
-              (_currentPageIndex + 1) % imagePaths.length; // Safe to use
+          _currentPageIndex = (_currentPageIndex + 1) % imagePaths.length;
           _pageController.nextPage(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
@@ -320,8 +304,63 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Align(
                                       alignment: Alignment.center,
                                       child: GestureDetector(
+                                        onTap: () async {
+                                          // Ensure _currentPageIndex is valid and within bounds
+                                          if (_currentPageIndex <
+                                              imagePaths.length) {
+                                            final sliderId =
+                                                imagePaths[_currentPageIndex]
+                                                    ['id'];
+                                            final sliderTrailer =
+                                                imagePaths[_currentPageIndex]
+                                                    ['trailerUrl'];
+                                            final sliderType =
+                                                imagePaths[_currentPageIndex]
+                                                    ['type'];
+                                            final sliderName =
+                                                imagePaths[_currentPageIndex]
+                                                    ['name'];
+
+                                            print("sliderName: $sliderName");
+
+                                            try {
+                                              if (sliderType == 'Trailer') {
+                                                print("object");
+                                                final fetchedVideoUrls =
+                                                    await fetchVideoUrls(
+                                                        sliderId!,
+                                                        sliderTrailer!);
+                                                print(fetchedVideoUrls);
+
+                                                if (fetchedVideoUrls
+                                                    .isNotEmpty) {
+                                                  String movieName = sliderName ??
+                                                      ''; // Ensure movieName is non-null
+
+                                                  // Navigate to the next page after the animation completes
+                                                  Get.to(() => VideoListScreen(
+                                                      urls: fetchedVideoUrls,
+                                                      movieName: movieName));
+                                                } else {
+                                                  print(
+                                                      'No videos found for this trailer.');
+                                                }
+                                              }
+                                            } catch (e) {
+                                              print(
+                                                  'Error fetching video URLs: $e');
+                                            }
+                                          } else {
+                                            print(
+                                                "Current page index is out of bounds");
+                                          }
+                                        },
                                         onLongPress: () async {
                                           // Ensure _currentPageIndex is valid and within bounds of imagePaths
+                                          setState(() {
+                                            _isEpisodeButtonVisible =
+                                                !_isEpisodeButtonVisible; // Toggle button visibility on long press
+                                          });
                                           if (_currentPageIndex <
                                               imagePaths.length) {
                                             final sliderType =
@@ -344,9 +383,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 final controller = _controllers[
                                                     _currentPageIndex];
 
-                                                if (controller == null ||
-                                                    !controller
-                                                        .value.isInitialized) {
+                                                if (!controller
+                                                    .value.isInitialized) {
                                                   // Initialize the controller asynchronously
                                                   print(
                                                       "Initializing video controller for URL: $trailerUrl");
@@ -395,14 +433,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                           }
                                         },
                                         onLongPressUp: () {
+                                          setState(() {
+                                            _isEpisodeButtonVisible =
+                                                !_isEpisodeButtonVisible; // Toggle button visibility on long press
+                                          });
                                           if (_currentPageIndex <
                                               _controllers.length) {
                                             final controller = _controllers[
                                                 _currentPageIndex %
                                                     _controllers.length];
-                                            if (controller != null &&
-                                                controller
-                                                    .value.isInitialized) {
+                                            if (controller
+                                                .value.isInitialized) {
                                               setState(() {
                                                 _isHolding = false;
                                                 controller
@@ -529,121 +570,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                     ),
-                                    Positioned(
-                                      bottom: 10,
-                                      left: MediaQuery.of(context).size.width *
-                                          0.15,
-                                      child: GestureDetector(
-                                        onTap: () async {
-                                          // Ensure _currentPageIndex is valid and within bounds
-                                          if (_currentPageIndex <
-                                              imagePaths.length) {
-                                            final sliderId =
-                                                imagePaths[_currentPageIndex]
-                                                    ['id'];
-                                            final sliderType =
-                                                imagePaths[_currentPageIndex]
-                                                    ['type'];
-                                            final sliderName =
-                                                imagePaths[_currentPageIndex]
-                                                    ['name'];
-
-                                            print("sliderName: $sliderName");
-
-                                            try {
-                                              if (sliderType == 'Trailer') {
-                                                final fetchedVideoUrls =
-                                                    await fetchVideoUrls(
-                                                        sliderId!);
-                                                print(fetchedVideoUrls);
-
-                                                if (fetchedVideoUrls
-                                                    .isNotEmpty) {
-                                                  String movieName = sliderName ??
-                                                      ''; // Ensure movieName is non-null
-                                                  Get.to(() => VideoListScreen(
-                                                      urls: fetchedVideoUrls,
-                                                      movieName: movieName));
-                                                } else {
-                                                  print(
-                                                      'No videos found for this trailer.');
-                                                }
-                                              }
-                                            } catch (e) {
-                                              print(
-                                                  'Error fetching video URLs: $e');
-                                            }
-                                          } else {
-                                            print(
-                                                "Current page index is out of bounds");
-                                          }
-                                        },
-                                        child: Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              .7,
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        vertical: 8,
-                                                        horizontal: 14),
-                                                decoration: BoxDecoration(
-                                                  color: AppColors
-                                                      .colorWhiteHighEmp
-                                                      .withOpacity(0.88),
-                                                  // Replace with AppColors.colorPrimary
-                                                  borderRadius:
-                                                      BorderRadius.circular(6),
-                                                ),
-                                                child: Row(
-                                                  children: [
-                                                    Icon(
-                                                        Icons
-                                                            .play_arrow_rounded,
-                                                        size: 25,
-                                                        color: AppColors
-                                                            .colorPrimary),
-                                                    // Replace with AppColors.colorWhiteHighEmp
-                                                    Text("Play ",
-                                                        style: TextStyle(
-                                                            fontSize: 15,
-                                                            color: AppColors
-                                                                .colorPrimary)),
-                                                    // Replace with AppColors.colorWhiteHighEmp
-                                                  ],
-                                                ),
-                                              ),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        vertical: 11,
-                                                        horizontal: 14),
-                                                decoration: BoxDecoration(
-                                                  color: AppColors
-                                                      .colorWhiteHighEmp
-                                                      .withOpacity(0.88),
-                                                  // Replace with AppColors.colorPrimary
-                                                  borderRadius:
-                                                      BorderRadius.circular(6),
-                                                ),
-                                                child: Text(
-                                                  "Episodes - ${imagePaths[_currentPageIndex % imagePaths.length]['episode'] ?? '0'}",
-                                                  style: TextStyle(
-                                                      fontSize: 15,
-                                                      color: AppColors
-                                                          .colorPrimary), // Replace with AppColors.colorWhiteHighEmp
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
                                   ],
                                 )
                               : AnimatedContainer(
@@ -692,7 +618,150 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 20,
+                  ),
+                  Container(
+                    width: MediaQuery.of(context).size.width * .7,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        GestureDetector(
+                          onTap: () async {
+                            // Ensure _currentPageIndex is valid and within bounds
+                            if (_currentPageIndex < imagePaths.length) {
+                              final sliderId =
+                                  imagePaths[_currentPageIndex]['id'];
+                              final sliderTrailer =
+                                  imagePaths[_currentPageIndex]['trailerUrl'];
+                              final sliderType =
+                                  imagePaths[_currentPageIndex]['type'];
+                              final sliderName =
+                                  imagePaths[_currentPageIndex]['name'];
+
+                              print("sliderName: $sliderName");
+
+                              try {
+                                if (sliderType == 'Trailer') {
+                                  print("object");
+                                  final fetchedVideoUrls = await fetchVideoUrls(
+                                      sliderId!, sliderTrailer!);
+                                  print(fetchedVideoUrls);
+
+                                  // Trigger animation
+                                  setState(() {
+                                    _scale = 1.2; // Scale up
+
+                                    _containerColor =
+                                        AppColors.colorWhiteHighEmp;
+                                    _containerTextColor =
+                                        AppColors.colorPrimary; // Fade out
+                                  });
+
+                                  // Wait for the animation to complete
+                                  await Future.delayed(
+                                      const Duration(milliseconds: 300));
+
+                                  // Revert the animation to the original state after a delay
+                                  setState(() {
+                                    _scale = 1.0; // Scale back to original
+
+                                    _containerColor =
+                                        AppColors.colorPrimaryDark;
+                                    _containerTextColor =
+                                        AppColors.colorWhiteHighEmp;
+                                  });
+
+                                  if (fetchedVideoUrls.isNotEmpty) {
+                                    String movieName = sliderName ??
+                                        ''; // Ensure movieName is non-null
+
+                                    // Navigate to the next page after the animation completes
+                                    Get.to(() => VideoListScreen(
+                                        urls: fetchedVideoUrls,
+                                        movieName: movieName));
+                                  } else {
+                                    print('No videos found for this trailer.');
+                                  }
+                                }
+                              } catch (e) {
+                                print('Error fetching video URLs: $e');
+                              }
+                            } else {
+                              print("Current page index is out of bounds");
+                            }
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            // Duration of the animation
+                            curve: Curves.easeInOut,
+                            // Smooth animation curve
+                            transform: Matrix4.identity()..scale(_scale),
+                            // Apply scaling effect
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 8, horizontal: 14),
+                              decoration: BoxDecoration(
+                                color: _containerColor,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.5),
+                                    // Shadow color
+                                    offset: Offset(0, 4),
+                                    // Shadow offset
+                                    blurRadius: 8,
+                                    // Blur radius
+                                    spreadRadius: 2, // Spread radius
+                                  ),
+                                ],
+                                // Use state variable to animate color
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.play_arrow_rounded,
+                                      size: 25, color: _containerTextColor),
+                                  Text("Play ",
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          color: _containerTextColor)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 8, horizontal: 14),
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.5),
+                                // Shadow color
+                                offset: Offset(0, 4),
+                                // Shadow offset
+                                blurRadius: 8,
+                                // Blur radius
+                                spreadRadius: 2, // Spread radius
+                              ),
+                            ],
+                            color:
+                                AppColors.colorWhiteHighEmp.withOpacity(0.88),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            imagePaths.isNotEmpty
+                                ? "Episodes - ${imagePaths[_currentPageIndex % imagePaths.length]['episode'] ?? '0'}"
+                                : "Episodes - 0",
+                            // Fallback text if imagePaths is empty
+                            style: TextStyle(
+                                fontSize: 18, color: AppColors.colorPrimary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 30),
                   // Add spacing between image and indicator
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -719,43 +788,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               SizedBox(
-                height: 20,
+                height: 25,
               ),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: isLoading
-                    ? Center(child: CircularProgressIndicator()) // Show loader
-                    : Row(
-                        children: [
-                          SizedBox(width: 16.w),
-                          Wrap(
-                            spacing: 5,
-                            runSpacing: 3,
-                            children: _data.map((data) {
-                              return FilterChip(
-                                showCheckmark: false,
-                                backgroundColor:
-                                    AppColors.colorSecondaryDarkest,
-                                label: Text(
-                                  data,
-                                  style: const TextStyle(
-                                      color: AppColors.colorWhiteHighEmp),
-                                ),
-                                shape: const StadiumBorder(
-                                    side: BorderSide(
-                                        color: AppColors.colorPrimary)),
-                                selected: _selectedData.contains(data),
-                                selectedColor: AppColors.colorPrimary,
-                                padding: const EdgeInsets.all(5),
-                                onSelected: (selected) =>
-                                    _onSelected(selected, data),
-                              );
-                            }).toList(),
-                          ),
-                          SizedBox(width: 16.w),
-                        ],
-                      ),
-              ),
+              const filterContent(),
               // Title and "Show all" button for Latest Shows
 
               const MostTrendingShowsModel(),

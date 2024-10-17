@@ -1,14 +1,22 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:http/http.dart' as http;
+
+import 'VideoListScreen.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
-  final String url;
+  final Map<String, dynamic> videoData;
 
-  const VideoPlayerWidget({Key? key, required this.url}) : super(key: key);
+  const VideoPlayerWidget({Key? key, required this.videoData})
+      : super(key: key);
 
   @override
   _VideoPlayerWidgetState createState() => _VideoPlayerWidgetState();
@@ -18,6 +26,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
     with WidgetsBindingObserver {
   VideoPlayerController? _controller;
   bool _isPlaying = true;
+  String apiKey = dotenv.env['API_KEY'] ?? '';
   bool _showControlIcon = false;
   Timer? _hideControlIconTimer;
   Duration? _lastPosition;
@@ -37,7 +46,9 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
   Future<void> _initializeVideoPlayer() async {
     try {
       // Start with network streaming for immediate playback
-      _controller = VideoPlayerController.network(widget.url);
+      String trailerUrl = widget.videoData['trailerUrl'];
+      print(widget.videoData['trailerUrl']);
+      _controller = VideoPlayerController.network(trailerUrl);
       await _controller!.initialize();
 
       if (!mounted) return;
@@ -51,7 +62,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
       });
 
       // Start caching in the background
-      _startCaching();
+      _startCaching(trailerUrl);
     } catch (error) {
       print("Error initializing video player: $error");
     }
@@ -79,11 +90,11 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
     });
   }
 
-  void _startCaching() async {
+  void _startCaching(String url) async {
     try {
       // Start caching the file in the background
-      await DefaultCacheManager().getSingleFile(widget.url);
-      print("Video cached successfully: ${widget.url}");
+      await DefaultCacheManager().getSingleFile(url);
+      print("Video cached successfully: $url");
     } catch (e) {
       print("Error caching video: $e");
     }
@@ -131,16 +142,6 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
           _showControlIcon = false;
         });
       }
-    });
-  }
-
-  void _startHideControlIconTimer() {
-    _hideControlIconTimer?.cancel();
-    _hideControlIconTimer = Timer(const Duration(seconds: 1), () {
-      if (!mounted) return;
-      setState(() {
-        _showControlIcon = false;
-      });
     });
   }
 
@@ -192,6 +193,49 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
   void _shareVideo(String episodeName) {
     final videoUrl = episodeName; // Replace with your actual video URL
     Share.share('$videoUrl');
+  }
+
+  Future<List<String>> fetchVideoUrls(String movieID, String trailerUrl) async {
+    final url = Uri.parse('http://$apiKey:8000/getMovieData/');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{'movieID': movieID}),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        print(jsonResponse);
+        // Map shortsData to video URLs and replace the path
+        final List<String> videoUrls = (jsonResponse['shortsData'] as List)
+            .where((data) => data['fileLocation'] != null)
+            .map((data) {
+          String videoPath = data['fileLocation'] as String;
+          String updatedPath = videoPath.replaceFirst(
+              'uploads/shorts/', 'http://$apiKey:8765/video/');
+          return updatedPath;
+        }).toList();
+
+        // Add the trailerUrl at the 0th index of videoUrls
+        videoUrls.insert(0, trailerUrl);
+
+        print("videos: $videoUrls");
+        return videoUrls;
+      } else {
+        print('Server error: ${response.statusCode} - ${response.body}');
+        throw Exception('Failed to load video URLs');
+      }
+    } on SocketException {
+      print('Network error: Could not connect to the server');
+      throw Exception('Network error');
+    } catch (e) {
+      print('Error: $e');
+      throw Exception('Failed to load video URLs');
+    }
   }
 
   @override
@@ -343,8 +387,33 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                             },
                           ),
                           IconButton(
-                            onPressed: () {
-                              // Get.to(() => VideoListScreen(urls: widget.url));
+                            onPressed: () async {
+                              final reelsId = widget.videoData['id'];
+                              final reelsTrailer =
+                                  widget.videoData['trailerUrl'];
+                              final reelsName = widget.videoData['name'];
+
+                              print(
+                                  "sliderName: $reelsId,$reelsTrailer ,hello-$reelsName");
+
+                              try {
+                                print("object");
+                                final fetchedVideoUrls = await fetchVideoUrls(
+                                    reelsId!, reelsTrailer!);
+                                print(fetchedVideoUrls);
+
+                                if (fetchedVideoUrls.isNotEmpty) {
+                                  String movieName = reelsName ??
+                                      ''; // Ensure movieName is non-null
+                                  Get.to(() => VideoListScreen(
+                                      urls: fetchedVideoUrls,
+                                      movieName: movieName));
+                                } else {
+                                  print('No videos found for this trailer.');
+                                }
+                              } catch (e) {
+                                print('Error fetching video URLs: $e');
+                              }
                             },
                             icon: Icon(
                               Icons.layers,
@@ -362,7 +431,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                           ),
                           IconButton(
                             onPressed: () {
-                              _shareVideo(widget.url);
+                              _shareVideo(widget.videoData['trailerUrl']);
                             },
                             icon: Icon(
                               Icons.share,

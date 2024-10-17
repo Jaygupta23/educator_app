@@ -5,6 +5,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:reelies/models/myBottomNavModel.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:reelies/screens/profileScreen/EditSelectedContent.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/appColors.dart';
 
 class InterestScreen extends StatefulWidget {
@@ -21,11 +23,36 @@ class _InterestScreenState extends State<InterestScreen> {
   String apiKey = dotenv.env['API_KEY'] ?? ''; // Ensure API_KEY is set in .env
   List<Map<String, dynamic>> _languages = []; // List to hold languages
   bool _isLoading = true; // Loading state
+  bool? loggedInBefore;
 
   @override
   void initState() {
     super.initState();
+    initializeUserData(); // Initialize user data and selected languages
     fetchLanguages(); // Fetch languages when the widget is initialized
+  }
+
+  Future<void> initializeUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userDataString = prefs.getString('userData');
+    if (userDataString != null) {
+      Map<String, dynamic> userData = jsonDecode(userDataString);
+      loggedInBefore = userData['loggedInBefore'] ?? false;
+
+      if (loggedInBefore == true) {
+        // Retrieve the selected languages from userData
+        List<dynamic> selectedLanguages = userData['selectedLanguages'] ?? [];
+
+        // Extract the language names and set them in _selectedData
+        List<String> selectedLanguageNames = selectedLanguages
+            .map((language) => language['name'].toString())
+            .toList();
+
+        setState(() {
+          _selectedData = selectedLanguageNames; // Initialize _selectedData
+        });
+      }
+    }
   }
 
   Future<void> fetchLanguages() async {
@@ -103,16 +130,42 @@ class _InterestScreenState extends State<InterestScreen> {
       if (response.statusCode == 200) {
         var responseData = jsonDecode(response.body);
         print(responseData['msg']);
+
+        // Retrieve the existing user data from SharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        String? userDataString = prefs.getString('userData');
+        Map<String, dynamic> userData = userDataString != null
+            ? jsonDecode(userDataString)
+            : <String, dynamic>{};
+
+        // Filter and collect the selected language objects from _languages
+        List<Map<String, dynamic>> selectedLanguageObjects = _languages
+            .where((language) => languageIds.contains(language['id']))
+            .map((language) => {
+                  'id': language['id'],
+                  'name': language['name'],
+                })
+            .toList();
+
+        // Update the userData with the selected languages
+        userData['selectedLanguages'] = selectedLanguageObjects;
+
+        // Save the updated userData back to SharedPreferences
+        await prefs.setString('userData', jsonEncode(userData));
+
+        // Verify the updated userData
+        String? updatedUserDataString = prefs.getString('userData');
+        print('Updated userData: $updatedUserDataString');
+        // Navigate to the next screen after a short delay
         Future.delayed(Duration(milliseconds: 100), () {
-          Get.to(() =>
-              const MyBottomNavModel()); // Navigate to bottom navigation model
+          if (loggedInBefore == true) {
+            Get.to(() => EditSelectedContent(userData: userData));
+          } else {
+            Get.offAll(() => MyBottomNavModel());
+          }
         });
       } else {
         print('Failed to set languages: ${response.statusCode}');
-        // await showNotification(
-        //   'Try Again',
-        //   'Something went wrong!',
-        // );
       }
     } catch (e) {
       print('Error saving languages: $e');

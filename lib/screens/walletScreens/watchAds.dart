@@ -10,7 +10,6 @@ class WatchAds extends StatefulWidget {
 
 class _WatchAdsState extends State<WatchAds> {
   // Variable to keep track of the active button index
-  int _activeIndex = 0;
   int _activeCheckInIndex = 0;
 
   @override

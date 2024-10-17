@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -7,12 +6,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:reelies/models/myBottomNavModel.dart';
 import 'package:reelies/models/rememberMeModel.dart';
 import 'package:reelies/screens/authScreens/signUpScreen.dart';
-import 'package:reelies/screens/interestScreen.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:reelies/screens/onboardingScreen/genreScreen.dart';
-
-import '../../main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/appColors.dart';
 import '../../utils/constants.dart';
 import '../../utils/myButton.dart';
@@ -77,11 +74,13 @@ class _SignInScreenState extends State<SignInScreen> {
     setState(() {
       isLoading = true;
     });
+
     final url = Uri.parse("http://$apiKey:8000/user/signIn/");
     final body = {
       'email': emailController.text,
       'password': passwordController.text
     };
+
     try {
       final response = await http.post(
         url,
@@ -89,36 +88,47 @@ class _SignInScreenState extends State<SignInScreen> {
         headers: {'Content-Type': 'application/json'},
       );
 
-      var responseData = jsonDecode(response.body);
-      var userData = responseData['userData'];
-      print(userData['loggedInBefore']);
-      if (userData['loggedInBefore'] == false) {
-        String userId = userData['_id'];
-        await showNotification(
-          'Log In Success',
-          'You have successfully Logged IN.',
-        );
-        emailController.clear();
-        passwordController.clear();
-        Get.offAll(() => GenreScreen(userId: userId));
-      } else if (userData['loggedInBefore'] == true) {
-        await showNotification(
-          'Log In Success',
-          'You have successfully Logged IN.',
-        );
-        emailController.clear();
-        passwordController.clear();
-        Get.offAll(() => MyBottomNavModel());
+      if (response.statusCode == 200) {
+        var responseData = jsonDecode(response.body);
+        var userData = responseData['userData'];
+        print(userData['loggedInBefore']);
+        // Store userData in local storage
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('userData', jsonEncode(userData));
+
+        if (userData['loggedInBefore'] == false) {
+          String userId = userData['_id'];
+          await showNotification(
+            'Log In Success',
+            'You have successfully Logged IN.',
+          );
+          emailController.clear();
+          passwordController.clear();
+          Get.offAll(() => GenreScreen(userId: userId));
+        } else if (userData['loggedInBefore'] == true) {
+          await showNotification(
+            'Log In Success',
+            'You have successfully Logged IN.',
+          );
+          emailController.clear();
+          passwordController.clear();
+          Get.offAll(() => MyBottomNavModel());
+        } else {
+          print("error in user login api");
+          String errorMessage = responseData['msg'] ?? 'LogIn failed.';
+          await showNotification('LogIn Failed', errorMessage);
+        }
       } else {
-        print("error in user login api");
-        String errorMessage = responseData['msg'] ?? 'LogIn failed.';
-        await showNotification('LogIn Failed', errorMessage);
+        await showNotification(
+          'Error:',
+          'No user found!',
+        );
       }
     } catch (e) {
       print("error: $e");
       await showNotification(
-        'Error',
-        'An error occurred during registration. Please try again.',
+        'Error:',
+        'No user found!',
       );
     } finally {
       setState(() {

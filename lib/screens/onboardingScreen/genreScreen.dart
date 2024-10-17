@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:reelies/screens/interestScreen.dart';
+import 'package:reelies/screens/profileScreen/EditSelectedContent.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../main.dart';
 import '../../utils/appColors.dart';
 
@@ -36,7 +37,9 @@ class _GenreScreenState extends State<GenreScreen>
   List<AnimationController?> _controllers = [];
   List<Animation<double>?> _animations = [];
   String apiKey = dotenv.env['API_KEY'] ?? '';
-  List<int> _selectedGenres = []; // Track selected genres
+  bool? loggedInBefore;
+
+  // Track selected genres
   List<AnimationController?> _shakeControllers = []; // For shaking effect
 
   @override
@@ -72,33 +75,62 @@ class _GenreScreenState extends State<GenreScreen>
         .show(0, title, body, platformChannelSpecifics, payload: 'item x');
   }
 
+  List<int> _selectedGenres = [];
+
   Future<void> fetchGenreItems() async {
     final url = Uri.parse("http://$apiKey:8000/user/genreList/");
     try {
       final response = await http.get(url);
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? storedUserData = prefs.getString('userData');
+      print("userdata: $storedUserData");
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print("Response data: $data['genreList']");
-        final List genreSliders =
-            data['genreList']; // Adjusted to match your API response
+        print("Response data: ${data['genreList']}");
+        final List genreSliders = data['genreList'];
+
+        // Decode the stored user data from JSON if available
+        List<String> selectedGenreIds = [];
+        if (storedUserData != null) {
+          Map<String, dynamic> userData = jsonDecode(storedUserData);
+          loggedInBefore = userData['loggedInBefore'] ?? false;
+          if (userData.containsKey('selectedGenre')) {
+            selectedGenreIds = (userData['selectedGenre'] as List)
+                .map((genre) => genre['_id'] as String)
+                .toList();
+          }
+        }
+
         setState(() {
           imagePaths = genreSliders.map((slider) {
-            String fileLocation = slider['icon'] as String;
-            String genreName = slider['name'] as String;
-            String sliderId = slider['_id'] as String;
+            String fileLocation = slider['icon']?.toString() ?? '';
+            String genreName = slider['name']?.toString() ?? 'Unknown';
+            String sliderId = slider['_id']?.toString() ?? '';
             String updatedPath = fileLocation.replaceFirst(
               'uploads/genreImage',
               'http://$apiKey:8765/genreIcon/',
             );
             return {
-              'path': updatedPath,
-              'title': genreName,
-              'id': sliderId,
+              'icon': updatedPath,
+              'name': genreName,
+              '_id': sliderId,
             };
           }).toList();
 
+          // Update the _selectedGenres list based on selectedGenreIds
+          _selectedGenres = imagePaths
+              .asMap()
+              .entries
+              .where((entry) => selectedGenreIds.contains(entry.value['_id']))
+              .map((entry) => entry.key)
+              .toList();
+
+          print("imagePaths: $imagePaths");
+          print("_selectedGenres: $_selectedGenres");
+
           isLoading = false;
-          _initializeAnimations(); // Set loading to false after fetching
+          _initializeAnimations();
         });
       } else {
         throw Exception(
@@ -107,35 +139,71 @@ class _GenreScreenState extends State<GenreScreen>
     } catch (e) {
       print('Error fetching genre: $e');
       setState(() {
-        isLoading = false; // Stop loading on error
+        isLoading = false;
       });
     }
   }
 
+// Filter function to show only non-selected genres
+  List<Map<String, dynamic>> getNonSelectedGenres() {
+    return imagePaths
+        .asMap()
+        .entries
+        .where((entry) => !_selectedGenres.contains(entry.key))
+        .map((entry) => entry.value)
+        .toList();
+  }
+
   Future<void> setGenres({required List<String> selectedIds}) async {
+    print("selectedIds: $selectedIds");
     final url = Uri.parse("http://$apiKey:8000/user/genreSelector/");
     final loginId = widget.userId;
     final body = {
       'userId': loginId,
       'selectedGenre': selectedIds,
     };
-    print("loginId: $loginId");
-    print(selectedIds);
     try {
       final response = await http.post(
         url,
         body: jsonEncode(body),
         headers: {'Content-Type': 'application/json'},
       );
+
       if (response.statusCode == 200) {
         // Handle successful response
         var responseData = jsonDecode(response.body);
-        print('Genres set successfully: ${responseData}');
-        Get.offAll(() => InterestScreen(userId: loginId));
-        // await showNotification(
-        //   'Genre Added in Queue',
-        //   'You have successfully Selected Genres',
-        // );
+        print(responseData);
+
+        // Store the selected genres in SharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+
+        // Retrieve existing user data
+        String? userDataString = prefs.getString('userData');
+        Map<String, dynamic> userData = userDataString != null
+            ? jsonDecode(userDataString)
+            : <String, dynamic>{};
+
+        // Filter and collect the selected genre objects from imagePaths
+        List<Map<String, dynamic>> selectedGenreObjects = imagePaths
+            .where((genre) => selectedIds.contains(genre['_id']))
+            .toList();
+        print("Selected Genre Objects: $selectedGenreObjects");
+
+        // Update the userData with the selected genres
+        userData['selectedGenre'] = selectedGenreObjects;
+
+        // Save the updated userData back to SharedPreferences
+        await prefs.setString('userData', jsonEncode(userData));
+
+        // Verify the updated userData
+        String? updatedUserDataString = prefs.getString('userData');
+        print('Updated userData: $updatedUserDataString');
+
+        if (loggedInBefore == true) {
+          Get.to(() => EditSelectedContent(userData: userData));
+        } else {
+          Get.offAll(() => InterestScreen(userId: userData['_id']));
+        }
       } else {
         // Handle error response
         print('Failed to set genres: ${response.statusCode}');
@@ -145,7 +213,7 @@ class _GenreScreenState extends State<GenreScreen>
         );
       }
     } catch (e) {
-      print('Error fetching genre: $e');
+      print('Error setting genres: $e');
       setState(() {
         isLoading = false; // Stop loading on error
       });
@@ -153,19 +221,47 @@ class _GenreScreenState extends State<GenreScreen>
   }
 
   void _initializeAnimations() {
-    for (int i = 0; i < imagePaths.length; i++) {
-      _controllers.add(AnimationController(
-        vsync: this,
-        duration: Duration(milliseconds: 500),
-      ));
-      _animations.add(Tween(begin: 1.0, end: 2.0).animate(_controllers[i]!));
-      _isBalloonVisible.add(true);
-      _balloonSizes.add(80.0);
-      _isExploding.add(false);
-      _shakeControllers.add(AnimationController(
-        vsync: this,
-        duration: Duration(milliseconds: Random().nextInt(700) + 300),
-      ));
+    List<dynamic> nonSelectedGenres = getNonSelectedGenres();
+
+    if (loggedInBefore == true) {
+      for (int i = 0; i < imagePaths.length; i++) {
+        _controllers.add(AnimationController(
+          vsync: this,
+          duration: Duration(milliseconds: 500),
+        ));
+        _animations.add(Tween(begin: 1.0, end: 2.0).animate(_controllers[i]!));
+
+        // Check if the current genre is non-selected
+        bool isNonSelected = nonSelectedGenres.any((genre) =>
+            genre['_id'] ==
+            imagePaths[i]['_id']); // Assuming imagePaths contain genre data
+
+        _isBalloonVisible
+            .add(isNonSelected); // true for non-selected, false for selected
+        _balloonSizes.add(80.0);
+        _isExploding.add(false);
+        _shakeControllers.add(AnimationController(
+          vsync: this,
+          duration: Duration(milliseconds: Random().nextInt(700) + 300),
+        ));
+      }
+    } else {
+      for (int i = 0; i < imagePaths.length; i++) {
+        _controllers.add(AnimationController(
+          vsync: this,
+          duration: Duration(milliseconds: 500),
+        ));
+        _animations.add(Tween(begin: 1.0, end: 2.0).animate(_controllers[i]!));
+
+        // Default initialization for when not logged in before
+        _isBalloonVisible.add(true);
+        _balloonSizes.add(80.0);
+        _isExploding.add(false);
+        _shakeControllers.add(AnimationController(
+          vsync: this,
+          duration: Duration(milliseconds: Random().nextInt(700) + 300),
+        ));
+      }
     }
   }
 
@@ -180,10 +276,6 @@ class _GenreScreenState extends State<GenreScreen>
           _balloonSizes[index] = 0.0; // Shrink the balloon after explosion
           _isBalloonVisible[index] = false; // Remove balloon from visible list
         });
-        if (_selectedGenres.length == 3 ||
-            _selectedGenres.length == imagePaths.length) {
-          _showSelectedGenresDialog(); // Show modal if at least 3 genres are selected
-        }
       });
     }
   }
@@ -195,114 +287,148 @@ class _GenreScreenState extends State<GenreScreen>
       isDismissible: !allGenresSelected,
       builder: (BuildContext context) {
         return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setModalState) {
-          return Container(
-            padding: EdgeInsets.all(10.0),
-            height: MediaQuery.of(context).size.height / 3,
-            decoration: BoxDecoration(
-              color: Colors.grey[900],
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: 5),
-                Center(
-                  child: Text(
-                    'Selected Genres',
-                    style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
-                  ),
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              padding: EdgeInsets.all(10.0),
+              height: MediaQuery.of(context).size.height * 0.24,
+              decoration: BoxDecoration(
+                color: Colors.grey[900],
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
-                SizedBox(height: 20),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Wrap(
-                      spacing: 5.0,
-                      runSpacing: 2.0,
-                      children: _selectedGenres.map((index) {
-                        final genreItem = imagePaths[index];
-                        return Container(
-                          width: 110,
-                          child: Chip(
-                            label: Text(genreItem['title']!,
-                                style: TextStyle(
-                                    color: AppColors.colorWhiteHighEmp)),
-                            avatar: CircleAvatar(
-                                backgroundImage:
-                                    NetworkImage(genreItem['path']!)),
-                            deleteIcon: Icon(Icons.close,
-                                size: 20, color: AppColors.colorWhiteHighEmp),
-                            onDeleted: () {
-                              setModalState(() {
-                                _selectedGenres.remove(index);
-                              });
-                              setState(() {
-                                _isBalloonVisible[index] =
-                                    true; // Show balloon back on screen
-                                _controllers[index]?.reset(); // Reset animation
-                                _isExploding[index] = false; // Stop explosion
-                              });
-                              if (_selectedGenres.isEmpty) {
-                                Navigator.of(context).pop();
-                              }
-                            },
-                            backgroundColor: AppColors.colorSecondaryDarkest,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 5),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Selected Genres',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                        );
-                      }).toList(),
+                        ),
+                        SizedBox(width: 40),
+                        Text(
+                          "* minimum 3 genres.",
+                          style: TextStyle(
+                            color: AppColors.colorPrimary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                SizedBox(height: 20),
-                Center(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      print(_selectedGenres);
-                      List<String> selectedGenreItem = _selectedGenres
-                          .map((index) {
+                  SizedBox(height: 20),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Center(
+                        child: Wrap(
+                          spacing: 5.0,
+                          runSpacing: 2.0,
+                          children: _selectedGenres.map((index) {
                             final genreItem = imagePaths[index];
-                            // Check if genreItem is not null before accessing 'id'
-                            return genreItem != null
-                                ? genreItem['id'] as String
-                                : '';
-                          })
-                          .where(
-                              (id) => id.isNotEmpty) // Filter out empty strings
-                          .toList();
+                            return Container(
+                              width: 110,
+                              child: Chip(
+                                label: Text(
+                                  genreItem['name']!,
+                                  style: TextStyle(
+                                    color: AppColors.colorWhiteHighEmp,
+                                  ),
+                                ),
+                                avatar: CircleAvatar(
+                                  backgroundImage:
+                                      NetworkImage(genreItem['icon']!),
+                                ),
+                                deleteIcon: Icon(
+                                  Icons.close,
+                                  size: 20,
+                                  color: AppColors.colorWhiteHighEmp,
+                                ),
+                                onDeleted: () {
+                                  setModalState(() {
+                                    _selectedGenres.remove(index);
+                                  });
+                                  setState(() {
+                                    _isBalloonVisible[index] = true;
+                                    _controllers[index]?.reset();
+                                    _isExploding[index] = false;
+                                  });
 
-                      try {
-                        await setGenres(selectedIds: selectedGenreItem);
-                        print("Genres have been successfully set.");
-                        // Optionally navigate to another screen or show a success message here
-                      } catch (error) {
-                        print("Error setting genres: $error");
-                        // Handle error (e.g., show a notification)
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: AppColors.colorPrimary,
-                      padding: EdgeInsets.symmetric(horizontal: 40),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6.0),
+                                  // If no selected genres, close the dialog
+                                  if (_selectedGenres.isEmpty) {
+                                    Navigator.of(context).pop();
+                                  }
+                                },
+                                backgroundColor:
+                                    AppColors.colorSecondaryDarkest,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
                     ),
-                    child: Text(
-                      'Continue',
-                      style: TextStyle(fontSize: 16),
+                  ),
+                  Divider(
+                    height: 2,
+                    color: AppColors.colorWhiteHighEmp,
+                  ),
+                  SizedBox(height: 6),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        print(_selectedGenres);
+                        List<String> selectedGenreItem = _selectedGenres
+                            .map((index) {
+                              final genreItem = imagePaths[index];
+                              return genreItem != null
+                                  ? genreItem['_id'] as String
+                                  : '';
+                            })
+                            .where((id) => id.isNotEmpty)
+                            .toList();
+
+                        try {
+                          if (selectedGenreItem.length >= 3) {
+                            print("Genres have been successfully set.");
+                            await setGenres(selectedIds: selectedGenreItem);
+                          }
+                        } catch (error) {
+                          print("Error setting genres: $error");
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.colorPrimary,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 40, vertical: 8),
+                        minimumSize: Size(0, 30),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6.0),
+                        ),
+                      ),
+                      child: Text(
+                        'Continue',
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        });
+                  SizedBox(height: 5),
+                ],
+              ),
+            );
+          },
+        );
       },
     );
   }
@@ -441,7 +567,7 @@ class _GenreScreenState extends State<GenreScreen>
                                             right: -1,
                                             child: ClipOval(
                                               child: Image.network(
-                                                genreItem['path']!,
+                                                genreItem['icon']!,
                                                 fit: BoxFit.cover,
                                                 width: balloonSize * 1.1,
                                                 height: balloonSize * 1.7,
@@ -463,7 +589,7 @@ class _GenreScreenState extends State<GenreScreen>
                                           Positioned(
                                             bottom: 20,
                                             child: Text(
-                                              genreItem['title']!,
+                                              genreItem['name']!,
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 color: Colors.white,
@@ -485,35 +611,97 @@ class _GenreScreenState extends State<GenreScreen>
                   },
                 ),
               ),
-            ],
-          ),
-          if (_selectedGenres.length >= 1)
-            Positioned(
-              bottom: 15,
-              right: 6,
-              child: GestureDetector(
-                onTap: _showSelectedGenresDialog,
-                child: Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.colorError,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10,
-                        offset: Offset(0, 4),
+              SizedBox(
+                height: 30,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        print(_selectedGenres);
+                        if (_selectedGenres.length >= 1) {
+                          _showSelectedGenresDialog();
+                        }
+                      },
+                      child: Row(
+                        children: [
+                          Text(
+                            "${_selectedGenres.length} ",
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            " Selected",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Icon(
-                    CupertinoIcons.chevron_up,
-                    color: AppColors.colorWhiteHighEmp,
-                    size: 28,
-                  ),
+                      style: ElevatedButton.styleFrom(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        backgroundColor: _selectedGenres.length >= 3
+                            ? AppColors.colorSuccess
+                            : AppColors.colorPrimary,
+                        foregroundColor: AppColors.colorWhiteHighEmp,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                    if (_selectedGenres.length >= 3)
+                      Row(
+                        children: [
+                          SizedBox(width: 50),
+                          ElevatedButton(
+                            onPressed: () async {
+                              print(_selectedGenres);
+                              List<String> selectedGenreItem = _selectedGenres
+                                  .map((index) {
+                                    final genreItem = imagePaths[index];
+                                    return genreItem != null
+                                        ? genreItem['_id'] as String
+                                        : '';
+                                  })
+                                  .where((id) => id.isNotEmpty)
+                                  .toList();
+
+                              try {
+                                await setGenres(selectedIds: selectedGenreItem);
+                                print("Genres have been successfully set.");
+                              } catch (error) {
+                                print("Error setting genres: $error");
+                              }
+                            },
+                            child: Row(
+                              children: [
+                                Text("Update", style: TextStyle(fontSize: 20)),
+                                SizedBox(width: 8),
+                                Icon(Icons.double_arrow_outlined),
+                              ],
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 10),
+                              backgroundColor: AppColors.colorWarning,
+                              foregroundColor: AppColors.colorWhiteHighEmp,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
               ),
-            ),
+              SizedBox(
+                height: 30,
+              )
+            ],
+          ),
         ],
       ),
     );

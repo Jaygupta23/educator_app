@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:reelies/models/myBottomNavModel.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/appColors.dart';
 import 'onboardingScreen.dart';
 
@@ -24,8 +28,23 @@ class _SplashScreenState extends State<SplashScreen>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
-    )..forward().whenComplete(() {
-        Get.off(() => const OnBoardingScreen());
+    )..forward().whenComplete(() async {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        String? storedUserData = prefs.getString('userData');
+        if (storedUserData != null) {
+          // Decode the storedUserData string to JSON
+          var userData = jsonDecode(storedUserData);
+          print("userdata: $userData");
+
+          if (userData['loggedInBefore'] == true) {
+            Get.off(() => const MyBottomNavModel());
+          } else {
+            Get.off(() => const OnBoardingScreen());
+          }
+        } else {
+          // Handle case where there is no userData stored
+          Get.off(() => const OnBoardingScreen());
+        }
       });
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(

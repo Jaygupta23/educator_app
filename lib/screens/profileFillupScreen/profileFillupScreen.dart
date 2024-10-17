@@ -4,7 +4,6 @@ import 'package:reelies/screens/profileFillupScreen/newPinScreen.dart';
 import 'package:get/get.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 
-import '../../models/genderDropdownModel.dart';
 import '../../utils/appColors.dart';
 
 class ProfileFillupScreen extends StatefulWidget {
@@ -199,7 +198,7 @@ class _ProfileFillupScreenState extends State<ProfileFillupScreen> {
                 ),
                 initialCountryCode: 'IN',
               ),
-              GenderDropdownModel(),
+              // GenderDropdownModel(),
               SizedBox(height: 70.h),
               InkWell(
                 onTap: () {

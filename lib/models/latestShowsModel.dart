@@ -77,8 +77,9 @@ class _LatestShowsModelState extends State<LatestShowsModel> {
   }
 
   Future<List<String>> fetchVideoUrls(String movieID) async {
-    print("moviee: $movieID");
+    print("movie: $movieID");
     final url = Uri.parse('http://$apiKey:8000/getMovieData/');
+
     try {
       final response = await http.post(
         url,
@@ -88,12 +89,21 @@ class _LatestShowsModelState extends State<LatestShowsModel> {
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-        final List<String> videoUrls =
-            (jsonResponse['shortsData'] as List).map((data) {
+
+        // Initialize videoUrls list and map shortsData if 'fileLocation' exists
+        final List<String> videoUrls = (jsonResponse['shortsData'] as List)
+            .where((data) => data['fileLocation'] != null)
+            .map((data) {
           String videoPath = data['fileLocation'] as String;
           return videoPath.replaceFirst(
               'uploads/shorts/', 'http://$apiKey:8765/video/');
         }).toList();
+
+        // Safely insert the trailerUrl if it exists
+        if (jsonResponse['shortsData'].isNotEmpty &&
+            jsonResponse['shortsData'][0]['trailerUrl'] != null) {
+          videoUrls.insert(0, jsonResponse['shortsData'][0]['trailerUrl']);
+        }
 
         return videoUrls;
       } else {
@@ -194,7 +204,7 @@ class _LatestShowsModelState extends State<LatestShowsModel> {
                                     title: Column(
                                       children: [
                                         Image.asset(
-                                          "assets/images/chicken.png",
+                                          "assets/images/chicken1.png",
                                           height: 150,
                                         ),
                                         SizedBox(height: 20),
@@ -221,7 +231,10 @@ class _LatestShowsModelState extends State<LatestShowsModel> {
                               );
                             } else {
                               // Navigate to the video screen with the list of URLs
-                              // Get.to(VideoListScreen(urls: fetchedVideoUrls));
+                              Get.to(VideoListScreen(
+                                urls: fetchedVideoUrls,
+                                movieName: thumbnail['name'] ?? 'Untitled',
+                              ));
                             }
                           } catch (e) {
                             print('Error fetching video URLs: $e');

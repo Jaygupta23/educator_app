@@ -33,6 +33,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
   Duration _totalDuration = Duration.zero;
   double _playbackSpeed = 1.0; // Default playback speed
   List<double> _speedOptions = [0.5, 1.0, 1.25, 1.5];
+  PageController _pageController = PageController();
 
   void initState() {
     super.initState();
@@ -49,56 +50,101 @@ class _VideoListScreenState extends State<VideoListScreen> {
     } else {
       print("No video URLs provided.");
     }
+    _pageController.addListener(() {
+      int nextPage = _pageController.page!.round();
+      if (nextPage != _currentVideoIndex) {
+        setState(() {
+          _currentVideoIndex = nextPage;
+        });
+        _initializeVideo();
+      }
+    });
   }
 
   void _initializeVideo() {
     print("Initializing video at index $_currentVideoIndex");
-    _controller?.dispose();
+
+    // Dispose of the previous controller if it exists and is initialized
+    if (_controller != null && _controller!.value.isInitialized) {
+      _controller!.pause();
+      print("Controller paused and disposed");
+      _controller!.dispose();
+    }
+
+    // Initialize a new controller for the current video index
     _controller =
         VideoPlayerController.network(widget.urls[_currentVideoIndex]);
+
+    // Initialize the video player and catch any errors
     _initializeVideoPlayerFuture = _controller!.initialize().then((_) {
-      setState(() {
-        _sliderMax = _controller!.value.duration.inSeconds.toDouble();
-        _sliderValue = 0; // Reset the slider value to the start
-        _totalDuration = _controller!.value.duration;
-        _currentTime = _controller!.value.position;
-        _controller!.play();
-        _isPlaying = true;
-      });
+      if (mounted) {
+        // Only call setState if the widget is still mounted
+        print("Video successfully initialized, playing now.");
+        setState(() {
+          _sliderMax = _controller!.value.duration.inSeconds.toDouble();
+          _sliderValue = 0;
+          _totalDuration = _controller!.value.duration;
+          _currentTime = _controller!.value.position;
+          _controller!
+              .play(); // Automatically start playing the newly initialized video
+          _isPlaying = true;
+        });
+      }
+    }).catchError((error) {
+      if (mounted) {
+        // Handle errors and show dialog only if the widget is still mounted
+        print("Error initializing video: $error");
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Playback Error'),
+            content: Text(
+                'This video cannot be played due to an unsupported codec or a playback issue.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    });
 
-      // Listen for changes in video playback
-      _controller!.addListener(() {
-        if (_controller!.value.isInitialized) {
-          setState(() {
-            // Update slider and current time
-            _sliderValue = _controller!.value.position.inSeconds
-                .toDouble()
-                .clamp(0, _sliderMax);
-            _currentTime = _controller!.value.position;
+    // Listen for changes in video playback
+    _controller!.addListener(() {
+      if (_controller!.value.isInitialized && mounted) {
+        setState(() {
+          // Update slider value and current time during playback
+          _sliderValue = _controller!.value.position.inSeconds
+              .toDouble()
+              .clamp(0, _sliderMax);
+          _currentTime = _controller!.value.position;
 
-            // Check if the video has ended
-            if (_controller!.value.position >= _controller!.value.duration) {
-              // Move to the next video if available
-              if (_currentVideoIndex + 1 < widget.urls.length) {
+          // Check if the video has ended and load the next one if available
+          if (_controller!.value.position >= _controller!.value.duration) {
+            if (_currentVideoIndex + 1 < widget.urls.length) {
+              setState(() {
                 _currentVideoIndex++;
-                // Dispose of the current controller and initialize the next video
-                _controller!.dispose();
-                _initializeVideo();
-              } else {
-                // Optionally handle end of playlist
-                _controller!.pause();
-                _isPlaying = false;
-              }
+              });
+              // Load and initialize the next video
+              _initializeVideo();
+            } else {
+              // Handle the end of the playlist
+              _controller!.pause();
+              _isPlaying = false;
+              print("End of playlist reached.");
             }
-          });
-        }
-      });
+          }
+        });
+      }
     });
   }
 
   @override
   void dispose() {
     _controller?.dispose();
+    _pageController.dispose();
     _hideControlIconTimer?.cancel();
     super.dispose();
   }
@@ -214,6 +260,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
           _currentVideoIndex = selectedIndex;
           _initializeVideo(); // Initialize the selected video
         });
+        _pageController.jumpToPage(selectedIndex);
       }
     });
   }
@@ -279,284 +326,320 @@ class _VideoListScreenState extends State<VideoListScreen> {
           ],
         ),
       ),
-      body: FutureBuilder(
-        future: _initializeVideoPlayerFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            return Stack(
-              children: [
-                Center(
-                  child: _controller!.value.isInitialized
-                      ? VisibilityDetector(
-                          key: const Key('video-player-key'),
-                          onVisibilityChanged: (info) {
-                            if (info.visibleFraction == 0.0) {
-                              _controller?.pause();
-                            } else {
-                              _controller?.play();
-                            }
-                          },
-                          child: GestureDetector(
-                            onDoubleTap: () => setState(() {
-                              isLiked = !isLiked;
-                            }),
-                            onTap: _togglePlayPause,
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  child: Align(
-                                    alignment: Alignment.topCenter,
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      child: VideoPlayer(_controller!),
-                                    ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.urls.length,
+        scrollDirection: Axis.vertical,
+        onPageChanged: (index) {
+          setState(() {
+            _currentVideoIndex = index;
+            _initializeVideo(); // Initialize without parameters
+          });
+        },
+        itemBuilder: (context, index) {
+          return AspectRatio(
+            aspectRatio: 16 / 9,
+            child: FutureBuilder(
+              future: _initializeVideoPlayerFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.connectionState == ConnectionState.done) {
+                  return Stack(
+                    children: [
+                      Center(
+                        child: _controller!.value.isInitialized
+                            ? VisibilityDetector(
+                                key: const Key('video-player-key'),
+                                onVisibilityChanged: (info) {
+                                  if (info.visibleFraction == 0.0) {
+                                    if (_currentVideoIndex == index) {
+                                      _controller?.pause();
+                                    }
+                                  } else {
+                                    if (_currentVideoIndex == index &&
+                                        !_isPlaying) {
+                                      _controller?.play();
+                                    }
+                                  }
+                                },
+                                child: GestureDetector(
+                                  onDoubleTap: () => setState(() {
+                                    isLiked = !isLiked;
+                                  }),
+                                  onTap: _togglePlayPause,
+                                  child: Column(
+                                    children: [
+                                      Expanded(
+                                        child: Align(
+                                          alignment: Alignment.topCenter,
+                                          child: SizedBox(
+                                            width: double.infinity,
+                                            child: VideoPlayer(_controller!),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : const CircularProgressIndicator(),
-                ),
-                if (_showControlIcon)
-                  Stack(alignment: Alignment.center, children: [
-                    Positioned(
-                        top: MediaQuery.of(context).size.height / 3,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              onPressed: _seekReplay5Seconds,
-                              icon: const Icon(Icons.replay_5,
-                                  size: 50, color: Colors.white70),
-                            ),
-                            GestureDetector(
-                              onTap: _togglePlayPause,
-                              child: Icon(
-                                _isPlaying
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                                size: 80.0,
-                                color: Colors.white70,
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: _seekForward5Seconds,
-                              icon: const Icon(Icons.forward_5,
-                                  size: 50, color: Colors.white70),
-                            )
-                          ],
-                        )),
-                  ]),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: _controller!.value.isInitialized
-                      ? Container(
-                          color: Colors.black,
-                          height: 80,
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 5, right: 10),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8.0),
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(top: 8.0),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          SliderTheme(
-                                            data: SliderThemeData(
-                                              activeTrackColor:
-                                                  AppColors.colorWhiteHighEmp,
-                                              inactiveTrackColor: AppColors
-                                                  .colorSecondaryDarkest,
-                                              thumbColor:
-                                                  AppColors.colorWhiteHighEmp,
-                                              overlayColor:
-                                                  Colors.red.withOpacity(0.2),
-                                              thumbShape:
-                                                  const RoundSliderThumbShape(
-                                                      enabledThumbRadius: 6),
-                                              trackHeight: 2.0,
-                                              overlayShape: SliderComponentShape
-                                                  .noOverlay,
-                                              trackShape:
-                                                  const RoundedRectSliderTrackShape(),
-                                            ),
-                                            child: Slider(
-                                              value: _sliderValue,
-                                              min: 0.0,
-                                              max: _sliderMax,
-                                              onChanged: (double value) {
-                                                _onSliderChanged(value);
-                                              },
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                                top: 4.0, left: 7),
-                                            child: Row(
+                              )
+                            : const CircularProgressIndicator(),
+                      ),
+                      if (_showControlIcon)
+                        Stack(alignment: Alignment.center, children: [
+                          Positioned(
+                              top: MediaQuery.of(context).size.height / 3,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    onPressed: _seekReplay5Seconds,
+                                    icon: const Icon(Icons.replay_5,
+                                        size: 50, color: Colors.white70),
+                                  ),
+                                  GestureDetector(
+                                    onTap: _togglePlayPause,
+                                    child: Icon(
+                                      _isPlaying
+                                          ? Icons.pause_rounded
+                                          : Icons.play_arrow_rounded,
+                                      size: 80.0,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: _seekForward5Seconds,
+                                    icon: const Icon(Icons.forward_5,
+                                        size: 50, color: Colors.white70),
+                                  )
+                                ],
+                              )),
+                        ]),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: _controller!.value.isInitialized
+                            ? Container(
+                                color: Colors.black,
+                                height: 80,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.only(left: 5, right: 10),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8.0),
+                                          child: Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 8.0),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
+                                                  MainAxisAlignment.center,
                                               children: [
-                                                Row(
-                                                  children: [
-                                                    Text(
-                                                      _formatDuration(
-                                                          _currentTime),
-                                                      style: TextStyle(
-                                                          color: Colors.white),
-                                                    ),
-                                                    Text(
-                                                      "/",
-                                                      style: TextStyle(
-                                                          color: Colors.white),
-                                                    ),
-                                                    Text(
-                                                      _formatDuration(
-                                                          _totalDuration),
-                                                      style: TextStyle(
-                                                          color: Colors.white),
-                                                    ),
-                                                  ],
+                                                SliderTheme(
+                                                  data: SliderThemeData(
+                                                    activeTrackColor: AppColors
+                                                        .colorWhiteHighEmp,
+                                                    inactiveTrackColor: AppColors
+                                                        .colorSecondaryDarkest,
+                                                    thumbColor: AppColors
+                                                        .colorWhiteHighEmp,
+                                                    overlayColor: Colors.red
+                                                        .withOpacity(0.2),
+                                                    thumbShape:
+                                                        const RoundSliderThumbShape(
+                                                            enabledThumbRadius:
+                                                                6),
+                                                    trackHeight: 2.0,
+                                                    overlayShape:
+                                                        SliderComponentShape
+                                                            .noOverlay,
+                                                    trackShape:
+                                                        const RoundedRectSliderTrackShape(),
+                                                  ),
+                                                  child: Slider(
+                                                    value: _sliderValue,
+                                                    min: 0.0,
+                                                    max: _sliderMax,
+                                                    onChanged: (double value) {
+                                                      _onSliderChanged(value);
+                                                    },
+                                                  ),
                                                 ),
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          top: 4.0, left: 7),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            _formatDuration(
+                                                                _currentTime),
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white),
+                                                          ),
+                                                          Text(
+                                                            "/",
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white),
+                                                          ),
+                                                          Text(
+                                                            _formatDuration(
+                                                                _totalDuration),
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                )
                                               ],
                                             ),
-                                          )
-                                        ],
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : Container(),
-                ),
-                if (_showControlIcon)
-                  Positioned(
-                      bottom: 100,
-                      right: 0,
-                      child: SizedBox(
-                        height: 250,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            TweenAnimationBuilder(
-                              tween:
-                                  Tween(begin: 1.0, end: isLiked ? 1.1 : 1.0),
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.elasticInOut,
-                              builder: (context, double scale, child) {
-                                return Transform.scale(
-                                  scale: scale,
-                                  child: IconButton(
-                                    onPressed: _onIconPressed,
+                              )
+                            : Container(),
+                      ),
+                      if (_showControlIcon)
+                        Positioned(
+                            bottom: 100,
+                            right: 0,
+                            child: SizedBox(
+                              height: 250,
+                              child: Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  TweenAnimationBuilder(
+                                    tween: Tween(
+                                        begin: 1.0, end: isLiked ? 1.1 : 1.0),
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.elasticInOut,
+                                    builder: (context, double scale, child) {
+                                      return Transform.scale(
+                                        scale: scale,
+                                        child: IconButton(
+                                          onPressed: _onIconPressed,
+                                          icon: Icon(
+                                            Icons.favorite_rounded,
+                                            shadows: [
+                                              BoxShadow(
+                                                color: Colors.black
+                                                    .withOpacity(0.5),
+                                                spreadRadius: 2,
+                                                blurRadius: 10,
+                                                offset: const Offset(0, 3),
+                                              ),
+                                            ],
+                                            size: 40,
+                                            color: isLiked
+                                                ? Colors.red[400]
+                                                : Colors.white,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  TweenAnimationBuilder(
+                                    tween: Tween(
+                                        begin: 1.0,
+                                        end: isBookmark ? 1.1 : 1.0),
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.elasticInOut,
+                                    builder: (context, double scale, child) {
+                                      return Transform.scale(
+                                        scale: scale,
+                                        child: IconButton(
+                                          onPressed: _onStarPressed,
+                                          icon: Icon(
+                                            Icons.star_rounded,
+                                            size: 40,
+                                            shadows: [
+                                              BoxShadow(
+                                                color: Colors.black
+                                                    .withOpacity(0.5),
+                                                spreadRadius: 2,
+                                                blurRadius: 10,
+                                                offset: const Offset(0, 3),
+                                              ),
+                                            ],
+                                            color: isBookmark
+                                                ? Colors.amber[300]
+                                                : Colors.white,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      _showModal(context);
+                                    },
                                     icon: Icon(
-                                      Icons.favorite_rounded,
-                                      // shadows: [
-                                      //   BoxShadow(
-                                      //     color: Colors.black.withOpacity(0.5),
-                                      //     spreadRadius: 2,
-                                      //     blurRadius: 10,
-                                      //     offset: const Offset(0, 3),
-                                      //   ),
-                                      // ],
+                                      Icons.layers,
                                       size: 40,
-                                      color: isLiked
-                                          ? Colors.red[400]
-                                          : Colors.white,
+                                      shadows: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.5),
+                                          spreadRadius: 2,
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                      color: Colors.white,
                                     ),
                                   ),
-                                );
-                              },
-                            ),
-                            TweenAnimationBuilder(
-                              tween: Tween(
-                                  begin: 1.0, end: isBookmark ? 1.1 : 1.0),
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.elasticInOut,
-                              builder: (context, double scale, child) {
-                                return Transform.scale(
-                                  scale: scale,
-                                  child: IconButton(
-                                    onPressed: _onStarPressed,
+                                  IconButton(
+                                    onPressed: () {
+                                      _shareVideo(widget.urls[
+                                          _currentVideoIndex]); // Share video
+                                    },
                                     icon: Icon(
-                                      Icons.star_rounded,
+                                      Icons.share_rounded,
                                       size: 40,
-                                      // shadows: [
-                                      //   BoxShadow(
-                                      //     color: Colors.black.withOpacity(0.5),
-                                      //     spreadRadius: 2,
-                                      //     blurRadius: 10,
-                                      //     offset: const Offset(0, 3),
-                                      //   ),
-                                      // ],
-                                      color: isBookmark
-                                          ? Colors.amber[300]
-                                          : Colors.white,
+                                      shadows: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.5),
+                                          spreadRadius: 2,
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                      color: Colors.white,
                                     ),
                                   ),
-                                );
-                              },
-                            ),
-                            IconButton(
-                              onPressed: () {
-                                _showModal(context);
-                              },
-                              icon: Icon(
-                                Icons.layers,
-                                size: 40,
-                                // shadows: [
-                                //   BoxShadow(
-                                //     color: Colors.black.withOpacity(0.5),
-                                //     spreadRadius: 2,
-                                //     blurRadius: 10,
-                                //     offset: const Offset(0, 3),
-                                //   ),
-                                // ],
-                                color: Colors.white,
+                                ],
                               ),
-                            ),
-                            IconButton(
-                              onPressed: () {
-                                _shareVideo(widget
-                                    .urls[_currentVideoIndex]); // Share video
-                              },
-                              icon: Icon(
-                                Icons.share_rounded,
-                                size: 40,
-                                // shadows: [
-                                //   BoxShadow(
-                                //     color: Colors.black.withOpacity(0.5),
-                                //     spreadRadius: 2,
-                                //     blurRadius: 10,
-                                //     offset: const Offset(0, 3),
-                                //   ),
-                                // ],
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )),
-              ],
-            );
-          } else {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+                            )),
+                    ],
+                  );
+                } else {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+              },
+            ),
+          );
         },
       ),
     );

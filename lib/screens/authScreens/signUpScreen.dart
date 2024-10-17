@@ -25,6 +25,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String apiKey = dotenv.env['API_KEY'] ?? '';
   final _formfield = GlobalKey<FormState>();
   final emailController = TextEditingController();
+  final nameController = TextEditingController();
   final passwordController = TextEditingController();
   final passwordController2 = TextEditingController();
 
@@ -71,6 +72,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     final url = Uri.parse("http://$apiKey:8000/user/register/");
     final body = {
+      'name': nameController.text,
       'email': emailController.text,
       'password': passwordController.text,
       'confirmPassword': passwordController2.text,
@@ -90,6 +92,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           'You have successfully registered.',
         );
         emailController.clear();
+        nameController.clear();
         passwordController.clear();
         passwordController2.clear();
         Get.offAll(() => const SignInScreen());
@@ -113,6 +116,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   void dispose() {
+    nameController.dispose();
     emailController.dispose();
     passwordController.dispose();
     passwordController2.dispose();
@@ -139,7 +143,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: 200.h),
+                SizedBox(height: 150.h),
                 Text(
                   createAccount,
                   textAlign: TextAlign.center,
@@ -151,7 +155,76 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 SizedBox(height: 10.h),
-                // This code block creates a TextFormField for email input field inside a container with a grey background and a rounded border:
+                Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                        color: AppColors.colorGrey,
+                        borderRadius: BorderRadius.circular(8)),
+                    width: 296.w, // width of container
+                    child: TextFormField(
+                      keyboardType: TextInputType.text,
+                      controller: nameController,
+                      // Controller for name input field
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return "Enter Email";
+                        }
+
+                        return null;
+                      },
+                      style: const TextStyle(color: AppColors.colorDisabled),
+                      // Style for the text entered in the field
+                      decoration: InputDecoration(
+                        hintText: 'Enter Nickname',
+                        hintStyle:
+                            const TextStyle(color: AppColors.colorDisabled),
+                        // Style for the hint text
+                        prefixIcon: const Icon(
+                          Icons.perm_contact_cal_rounded,
+                          color: AppColors.colorDisabled, // Color for the icon
+                        ),
+                        contentPadding:
+                            const EdgeInsets.fromLTRB(10, 16, 8, 16),
+                        // Padding for the content
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                              8), // Border radius of the input field
+                          borderSide: const BorderSide(
+                            color: AppColors.colorGrey,
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          // Border radius of the input field when it is focused
+                          borderSide: const BorderSide(
+                            color: AppColors.colorGrey,
+                            width: 1,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          // Border radius of the input field when there is an error
+                          borderSide: const BorderSide(
+                            color: AppColors.colorError,
+                            // Border color when there is an error
+                            width: 1,
+                          ),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          // Border radius of the input field when there is an error and it is focused
+                          borderSide: const BorderSide(
+                            color: AppColors.colorError,
+                            // Border color when there is an error and it is focused
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 10.h),
                 Center(
                   child: Container(
                     decoration: BoxDecoration(
@@ -225,7 +298,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                   ),
                 ),
-
                 SizedBox(height: 10.h),
                 Center(
                   child: Container(
@@ -324,7 +396,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                   ),
                 ),
-
                 SizedBox(height: 10.h),
                 Center(
                   child: Container(
@@ -410,7 +481,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                   ),
                 ),
-
                 const RememberMeModel(),
                 SizedBox(height: 10.h),
                 Padding(
@@ -427,7 +497,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       },
                       text: isLoading ? "" : "CREATE ACCOUNT"),
                 ),
-
                 SizedBox(height: 5.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

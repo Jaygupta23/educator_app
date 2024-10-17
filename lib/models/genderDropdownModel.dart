@@ -4,6 +4,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../utils/appColors.dart';
 
 class GenderDropdownModel extends StatefulWidget {
+  final String gender;
+  final Function(String) onGenderChanged; // Callback function
+  final List<Map<String, String>> items; // List of items with value and image
+
+  const GenderDropdownModel({
+    Key? key,
+    required this.gender,
+    required this.onGenderChanged,
+    required this.items, // Add items to the constructor
+  }) : super(key: key);
+
   @override
   _GenderDropdownModelState createState() => _GenderDropdownModelState();
 }
@@ -11,15 +22,11 @@ class GenderDropdownModel extends StatefulWidget {
 class _GenderDropdownModelState extends State<GenderDropdownModel> {
   late String _selectedValue;
 
-  final List<String> _items = [
-    'Male',
-    'Female',
-  ];
-
   @override
   void initState() {
     super.initState();
-    _selectedValue = _items[0];
+    _selectedValue =
+        widget.gender == '' ? widget.items[0]['value']! : widget.gender;
   }
 
   @override
@@ -33,26 +40,58 @@ class _GenderDropdownModelState extends State<GenderDropdownModel> {
         color: AppColors.colorGrey,
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 16),
+            padding: const EdgeInsets.only(left: 10),
             child: DropdownButton(
               dropdownColor: AppColors.colorGrey,
               borderRadius: BorderRadius.circular(12),
               value: _selectedValue,
-              items: _items.map((String value) {
+              isDense: false,
+              // Prevents compacting the items
+              itemHeight: 50.h,
+              // Set the itemHeight to match the desired height
+              items: widget.items.map((item) {
                 return DropdownMenuItem(
-                  value: value,
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                        fontSize: 14.sp, color: AppColors.colorWhiteHighEmp),
+                  value: item['value'],
+                  child: Container(
+                    height: 300.h,
+                    // Set the desired height for the background
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    // Add vertical padding
+
+                    decoration: BoxDecoration(
+                      color: AppColors.colorGrey,
+                      // Background color for the dropdown item
+                      borderRadius: BorderRadius.circular(8), // Rounded corners
+                    ),
+                    child: Row(
+                      children: [
+                        Image.asset(
+                          item['image']!,
+                          width: 35.w,
+                          height: 30.h,
+                          fit: BoxFit.cover,
+                        ),
+                        SizedBox(width: 20.w),
+                        // Spacing between image and text
+                        Text(
+                          item['value']!,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: AppColors.colorWhiteHighEmp,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }).toList(),
               onChanged: (newValue) {
                 setState(() {
                   _selectedValue = newValue!;
+                  widget.onGenderChanged(_selectedValue);
                 });
               },
               underline: Container(
@@ -61,10 +100,10 @@ class _GenderDropdownModelState extends State<GenderDropdownModel> {
               ),
               iconDisabledColor: Colors.transparent,
               icon: const Padding(
-                padding: EdgeInsets.only(left: 270),
+                padding: EdgeInsets.only(left: 130),
                 child: Icon(Icons.arrow_drop_down,
                     color: AppColors.colorWhiteHighEmp),
-              ), // add your own icon here
+              ),
             ),
           ),
         ],
