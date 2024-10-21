@@ -30,7 +30,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String apiKey = dotenv.env['API_KEY'] ?? '';
   File? _imageFile;
   final List<Map<String, String>> genderItems = [
-    {'value': 'Not Specified', 'image': 'assets/images/notSpecified.webp'},
+    {'value': 'Not Specified', 'image': 'assets/images/notSpecified.png'},
     {'value': 'Male', 'image': 'assets/images/img4.png'},
     {'value': 'Female', 'image': 'assets/images/img5.png'},
   ];

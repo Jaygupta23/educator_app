@@ -80,7 +80,7 @@ class _SignInScreenState extends State<SignInScreen> {
       'email': emailController.text,
       'password': passwordController.text
     };
-
+    print(emailController.text);
     try {
       final response = await http.post(
         url,

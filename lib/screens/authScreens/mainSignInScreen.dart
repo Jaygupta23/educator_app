@@ -41,7 +41,7 @@ class MainSignInScreen extends StatelessWidget {
             SizedBox(height: 10.h),
             GestureDetector(
               onTap: () {
-                Get.offAll(const MyBottomNavModel());
+                Get.offAll(() => const MyBottomNavModel());
               },
               child: Container(
                 height: 56.h,
@@ -71,7 +71,7 @@ class MainSignInScreen extends StatelessWidget {
             SizedBox(height: 10.h),
             GestureDetector(
               onTap: () {
-                Get.offAll(const MyBottomNavModel());
+                Get.offAll(() => const MyBottomNavModel());
               },
               child: Container(
                 height: 56.h,
@@ -101,7 +101,7 @@ class MainSignInScreen extends StatelessWidget {
             SizedBox(height: 10.h),
             GestureDetector(
               onTap: () {
-                Get.offAll(const MyBottomNavModel());
+                Get.offAll(() => const MyBottomNavModel());
               },
               child: Container(
                 height: 56.h,
@@ -151,7 +151,7 @@ class MainSignInScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 30),
               child: MyButton(
                   onPressed: () {
-                    Get.offAll(const SignInScreen());
+                    Get.offAll(() => const SignInScreen());
                   },
                   text: "SIGN IN WITH PASSWORD"),
             ),

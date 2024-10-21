@@ -1,13 +1,18 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 import 'package:reelies/screens/searchScreen/searchList.dart';
 import 'package:reelies/screens/searchScreen/sortFilterChips/categoryChips.dart';
 import 'package:reelies/screens/searchScreen/sortFilterChips/genreChips.dart';
 import 'package:reelies/screens/searchScreen/sortFilterChips/regionChips.dart';
 import 'package:reelies/screens/searchScreen/sortFilterChips/sortChips.dart';
 import 'package:reelies/screens/searchScreen/sortFilterChips/timeChips.dart';
-
+import 'package:http/http.dart' as http;
 import '../../utils/appColors.dart';
+import '../reels/VideoListScreen.dart';
 import 'filterResultScreen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -18,36 +23,87 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final List<Map<String, dynamic>> gridMap = [
-    {
-      "title": "Pushpa",
-      "images": "assets/images/Image1.png",
-    },
-    {
-      "title": "Action",
-      "images": "assets/images/Image-1.png",
-    },
-    {
-      "title": "The last Airbender",
-      "images": "assets/images/Image-3.png",
-    },
-    {
-      "title": "Top Gun Mavrik",
-      "images": "assets/images/mavrik.png",
-    },
-    {
-      "title": "Oblivion",
-      "images": "assets/images/oblivion.png",
-    },
-    {
-      "title": "Fallout",
-      "images": "assets/images/fallout.png",
-    },
-    {
-      "title": "Bullet Train",
-      "images": "assets/images/Image-4.png",
+  String apiKey = dotenv.env['API_KEY'] ?? '';
+  List<Map<String, String>> gridMap = [];
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    fetchTrendingShows();
+  }
+
+  Future<void> fetchTrendingShows() async {
+    try {
+      final url = Uri.parse("http://$apiKey:8000/user/trendingMovies");
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List sliders = data['movies'] ?? [];
+        setState(() {
+          gridMap = sliders.map((slider) {
+            String fileLocation = slider['fileLocation'] as String? ?? '';
+            String sliderName = (slider['name'] ?? '').toString();
+            String sliderId = (slider['_id'] ?? '').toString();
+
+            String updatedPath = fileLocation.replaceFirst(
+                'uploads/thumbnail/', 'http://$apiKey:8765/thumbnails/');
+            print("trending parsed: $updatedPath,  $sliderName");
+            return {
+              'path': updatedPath,
+              'id': sliderId,
+              'name': sliderName,
+            };
+          }).toList();
+        });
+      }
+    } catch (e) {
+      print("error: $e");
     }
-  ];
+  }
+
+  Future<List<String>> fetchVideoUrls(String movieID) async {
+    print("movie: $movieID");
+    final url = Uri.parse('http://$apiKey:8000/getMovieData/');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: jsonEncode({'movieID': movieID}),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+
+        // Initialize videoUrls list and map shortsData if 'fileLocation' exists
+        final List<String> videoUrls = (jsonResponse['shortsData'] as List)
+            .where((data) => data['fileLocation'] != null)
+            .map((data) {
+          String videoPath = data['fileLocation'] as String;
+          return videoPath.replaceFirst(
+              'uploads/shorts/', 'http://$apiKey:8765/video/');
+        }).toList();
+
+        // Safely insert the trailerUrl if it exists
+        if (jsonResponse['shortsData'].isNotEmpty &&
+            jsonResponse['shortsData'][0]['trailerUrl'] != null) {
+          videoUrls.insert(0, jsonResponse['shortsData'][0]['trailerUrl']);
+        }
+
+        return videoUrls;
+      } else {
+        print('Server error: ${response.statusCode} - ${response.body}');
+        throw Exception('Failed to load video URLs');
+      }
+    } on SocketException {
+      print('Network error: Could not connect to the server');
+      throw Exception('Network error');
+    } catch (e) {
+      print('Error: $e');
+      throw Exception('Failed to load video URLs');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,10 +125,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     width: 260.w,
                     child: TextField(
                       onSubmitted: (value) {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => SearchListScreen()));
+                        Get.to(() => SearchListScreen());
                       },
                       style: TextStyle(
                           color: Colors.white, fontWeight: FontWeight.w400),
@@ -287,70 +340,133 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   itemCount: gridMap.length,
                   itemBuilder: (_, index) {
-                    return Stack(children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(
-                            16.0,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.asset(
-                                "${gridMap.elementAt(index)['images']}",
-                                height: 170,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "${gridMap.elementAt(index)['title']}",
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall!
-                                        .merge(
-                                          const TextStyle(
-                                            fontWeight: FontWeight.w400,
-                                            color: AppColors.colorWhiteHighEmp,
-                                            fontSize: 12,
-                                          ),
-                                        ),
+                    final item = gridMap[index];
+                    return GestureDetector(
+                      onTap: () async {
+                        String? videoId =
+                            item['id']; // Access the thumbnail ID correctly
+                        try {
+                          final fetchedVideoUrls =
+                              await fetchVideoUrls(videoId!);
+
+                          if (fetchedVideoUrls.isEmpty) {
+                            // Show a modal if no video URLs are found
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Column(
+                                    children: [
+                                      Image.asset(
+                                        "assets/images/chicken1.png",
+                                        height: 150,
+                                      ),
+                                      SizedBox(height: 20),
+                                      Text(
+                                        "No Episodes Found!",
+                                        style: TextStyle(fontSize: 26),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context)
+                                            .pop(); // Close the dialog
+                                      },
+                                      child: Text(
+                                        "OK",
+                                        style: TextStyle(fontSize: 20),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          } else {
+                            // Navigate to the video screen with the list of URLs
+                            Get.to(VideoListScreen(
+                              urls: fetchedVideoUrls,
+                              movieName: item['name'] ?? 'Untitled',
+                            ));
+                          }
+                        } catch (e) {
+                          print('Error fetching video URLs: $e');
+                        }
+                      },
+                      child: Stack(children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(
+                              16.0,
                             ),
-                          ],
-                        ),
-                      ),
-                      Positioned(
-                          top: 141,
-                          left: 135,
-                          child: Container(
-                            height: 22,
-                            width: 22,
-                            decoration: BoxDecoration(
-                                color: AppColors.colorPrimary,
-                                borderRadius: BorderRadius.circular(4)),
-                            child: Center(
-                              child: Text(
-                                '8.5',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w400,
-                                  color: AppColors.colorWhiteHighEmp,
-                                  fontSize: 10,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  "${gridMap.elementAt(index)['path']}",
+                                  // Use network image here
+                                  height: 170,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(
+                                      Icons.broken_image,
+                                      size: 170,
+                                    ); // Display an error icon if the image fails to load
+                                  },
                                 ),
                               ),
-                            ),
-                          ))
-                    ]);
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "${gridMap.elementAt(index)['name']}",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall!
+                                          .merge(
+                                            const TextStyle(
+                                              fontWeight: FontWeight.w400,
+                                              color:
+                                                  AppColors.colorWhiteHighEmp,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Positioned(
+                            top: 125,
+                            left: 127,
+                            child: Container(
+                              height: 22,
+                              width: 22,
+                              decoration: BoxDecoration(
+                                  color: AppColors.colorPrimary,
+                                  borderRadius: BorderRadius.circular(4)),
+                              child: Center(
+                                child: Text(
+                                  '8.5',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w400,
+                                    color: AppColors.colorWhiteHighEmp,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                            ))
+                      ]),
+                    );
                   },
                 ),
               ),

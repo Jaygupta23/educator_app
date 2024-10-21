@@ -114,7 +114,7 @@ packages:
     source: hosted
     version: "0.3.4+2"
   crypto:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: crypto
       sha256: ec30d999af904f33454ba22ed9a86162b35e52b44ac4807d1d93c288041d7d27
@@ -270,22 +270,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.4.1"
-  flutter_carousel_slider:
-    dependency: "direct main"
-    description:
-      name: flutter_carousel_slider
-      sha256: "4cd0691b98ebbf8b40361e01779b3a211002c963d3709630e775fba699d3b821"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
-  flutter_carousel_widget:
-    dependency: "direct main"
-    description:
-      name: flutter_carousel_widget
-      sha256: b57a42db67b7ffaa5f7922f3f90204a0266f68784455253cbaa247e665f12301
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.1"
   flutter_dotenv:
     dependency: "direct main"
     description:
@@ -561,7 +545,7 @@ packages:
     source: hosted
     version: "1.9.0"
   path_provider:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: path_provider
       sha256: fec0d61223fba3154d87759e3cc27fe2c8dc498f6386c6d6fc80d1afdd1bf378

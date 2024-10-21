@@ -34,10 +34,6 @@ class _LatestShowsScreenState extends State<LatestShowsScreen> {
       "images": "assets/images/oblivion.png",
     },
     {
-      "title": "Fallout",
-      "images": "assets/images/fallout.png",
-    },
-    {
       "title": "Bullet Train",
       "images": "assets/images/Image-4.png",
     }
