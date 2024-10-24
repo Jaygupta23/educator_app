@@ -27,7 +27,6 @@ class _ContinueWatchingState extends State<ContinueWatching> {
   Future<void> fetchContinueWatchingMovies() async {
     // Fetch from local storage
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString("continueWatch", "true");
     List<String> savedProgress = prefs.getStringList("videoProgress") ?? [];
     print("savedProgress : $savedProgress");
 
@@ -35,15 +34,18 @@ class _ContinueWatchingState extends State<ContinueWatching> {
     setState(() {
       continueWatchingMovies = savedProgress.map((item) {
         Map<String, dynamic> progress = jsonDecode(item);
+        String moviePath = progress['moviePath'] ?? 'Unknown';
         String movieName =
             progress['movieName'] ?? 'Unknown'; // Ensure movie name is present
         String videoUrl =
             progress['videoId'] ?? ''; // Ensure videoId is present
 
-        print('Movie: $movieName, Video URL: $videoUrl'); // Debugging line
+        print(
+            'Movie: $movieName, Video URL: $videoUrl, moviePath : $moviePath'); // Debugging line
 
         return {
           'name': movieName,
+          'moviePath': moviePath,
           'videoUrl': videoUrl,
         };
       }).toList();
@@ -88,11 +90,14 @@ class _ContinueWatchingState extends State<ContinueWatching> {
                     itemBuilder: (context, index) {
                       final item = continueWatchingMovies[index];
                       return InkWell(
-                        onTap: () {
-                          // Navigate to the video list screen without passing savedPosition
+                        onTap: () async {
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setString("continueWatch",
+                              "true"); // Set flag when tapping from Continue Watching
                           Get.to(() => VideoListScreen(
                                 urls: [item['videoUrl']!],
                                 movieName: item['name'] ?? 'Untitled',
+                                moviePath: item['moviePath'] ?? '',
                               ));
                         },
                         child: Padding(
@@ -107,7 +112,7 @@ class _ContinueWatchingState extends State<ContinueWatching> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Thumbnail container (currently a placeholder)
+                                  // Thumbnail container
                                   Container(
                                     height: 105.h,
                                     width: 100.w,
@@ -116,12 +121,27 @@ class _ContinueWatchingState extends State<ContinueWatching> {
                                     ),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(10),
-                                      child: Container(
-                                        width: 100,
-                                        height: 100,
-                                        color: Colors
-                                            .blueAccent, // Placeholder color
-                                      ),
+                                      child: item['moviePath']!.isNotEmpty
+                                          ? Image.network(
+                                              item['moviePath']!,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error,
+                                                      stackTrace) =>
+                                                  Container(
+                                                color: Colors.grey,
+                                                // Fallback placeholder color
+                                                child: Center(
+                                                  child: Icon(
+                                                    Icons.error,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          : Container(
+                                              color: Colors
+                                                  .blueAccent, // Placeholder color when no path
+                                            ),
                                     ),
                                   ),
                                   SizedBox(height: 4),

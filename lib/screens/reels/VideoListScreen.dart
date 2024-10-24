@@ -13,8 +13,13 @@ import 'package:visibility_detector/visibility_detector.dart';
 class VideoListScreen extends StatefulWidget {
   final List<String> urls; // List of video URLs
   final String movieName;
+  final String moviePath;
 
-  const VideoListScreen({Key? key, required this.urls, required this.movieName})
+  const VideoListScreen(
+      {Key? key,
+      required this.urls,
+      required this.movieName,
+      required this.moviePath})
       : super(key: key);
 
   @override
@@ -42,11 +47,26 @@ class _VideoListScreenState extends State<VideoListScreen> {
   @override
   void initState() {
     super.initState();
+
     _pageController = PageController(initialPage: _currentVideoIndex);
-    _loadVideoProgress().then((timestamp) {
-      setState(() {
-        savedTimestamp = timestamp ?? 0;
-      });
+
+    // Load video progress with continueWatch flag handling
+    _loadVideoProgress().then((timestamp) async {
+      final prefs = await SharedPreferences.getInstance();
+      String? continueWatching = prefs.getString("continueWatch");
+
+      if (continueWatching == "true") {
+        setState(() {
+          savedTimestamp = timestamp ?? 0;
+        });
+        // Clear the flag after using it to prevent it from interfering with other tabs
+        await prefs.remove("continueWatch");
+      } else {
+        setState(() {
+          savedTimestamp = 0;
+        });
+      }
+
       _initializeVideo();
     });
 
@@ -152,6 +172,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
 
       Map<String, dynamic> currentProgress = {
         "movieName": widget.movieName,
+        "moviePath": widget.moviePath,
         "videoId": currentVideoId,
         "timestamp": _controller!.value.position.inSeconds,
       };
@@ -169,6 +190,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
   Future<int?> _loadVideoProgress() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     String? continueWatching = prefs.getString("continueWatch");
+    print("continueWatching: $continueWatching");
 
     List<String> savedProgress = prefs.getStringList("videoProgress") ?? [];
 
@@ -589,24 +611,41 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                     builder: (context, double scale, child) {
                                       return Transform.scale(
                                         scale: scale,
-                                        child: IconButton(
-                                          onPressed: _onIconPressed,
-                                          icon: Icon(
-                                            Icons.favorite_rounded,
-                                            shadows: [
-                                              BoxShadow(
-                                                color: Colors.black
-                                                    .withOpacity(0.5),
-                                                spreadRadius: 2,
-                                                blurRadius: 10,
-                                                offset: const Offset(0, 3),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            IconButton(
+                                              onPressed: _onIconPressed,
+                                              icon: Icon(
+                                                Icons.favorite_rounded,
+                                                shadows: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.5),
+                                                    spreadRadius: 2,
+                                                    blurRadius: 10,
+                                                    offset: const Offset(0, 3),
+                                                  ),
+                                                ],
+                                                size: 38,
+                                                color: isLiked
+                                                    ? Colors.red[400]
+                                                    : Colors.white,
                                               ),
-                                            ],
-                                            size: 40,
-                                            color: isLiked
-                                                ? Colors.red[400]
-                                                : Colors.white,
-                                          ),
+                                            ),
+                                            Transform.translate(
+                                              offset: const Offset(0, -10),
+                                              child: Text(
+                                                "1M",
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: AppColors
+                                                      .colorWhiteHighEmp,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       );
                                     },
@@ -624,7 +663,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                           onPressed: _onStarPressed,
                                           icon: Icon(
                                             Icons.star_rounded,
-                                            size: 40,
+                                            size: 38,
                                             shadows: [
                                               BoxShadow(
                                                 color: Colors.black
@@ -648,7 +687,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                     },
                                     icon: Icon(
                                       Icons.layers,
-                                      size: 40,
+                                      size: 38,
                                       shadows: [
                                         BoxShadow(
                                           color: Colors.black.withOpacity(0.5),
@@ -667,7 +706,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                     },
                                     icon: Icon(
                                       Icons.share_rounded,
-                                      size: 40,
+                                      size: 38,
                                       shadows: [
                                         BoxShadow(
                                           color: Colors.black.withOpacity(0.5),

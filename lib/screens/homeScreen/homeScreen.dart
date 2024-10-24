@@ -334,9 +334,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       sliderPath ?? '';
                                                   // Navigate to the next page after the animation completes
                                                   Get.to(() => VideoListScreen(
-                                                        urls: fetchedVideoUrls,
-                                                        movieName: movieName,
-                                                      ));
+                                                      urls: fetchedVideoUrls,
+                                                      movieName: movieName,
+                                                      moviePath: moviePath));
                                                 } else {
                                                   print(
                                                       'No videos found for this trailer.');

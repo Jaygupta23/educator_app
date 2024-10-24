@@ -407,6 +407,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                                       ''; // Ensure movieName is non-null
                                   Get.to(() => VideoListScreen(
                                       urls: fetchedVideoUrls,
+                                      moviePath: "path/iamge",
                                       movieName: movieName));
                                 } else {
                                   print('No videos found for this trailer.');

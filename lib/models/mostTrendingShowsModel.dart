@@ -195,6 +195,7 @@ class _MostTrendingShowsModelState extends State<MostTrendingShowsModel> {
                         Get.to(() => VideoListScreen(
                               urls: fetchedVideoUrls,
                               movieName: item['name'] ?? 'Untitled',
+                              moviePath: item['path'] ?? 'Untitled',
                             ));
                       }
                     } catch (e) {

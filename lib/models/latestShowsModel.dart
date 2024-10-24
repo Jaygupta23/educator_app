@@ -234,6 +234,8 @@ class _LatestShowsModelState extends State<LatestShowsModel> {
                               Get.to(VideoListScreen(
                                 urls: fetchedVideoUrls,
                                 movieName: thumbnail['name'] ?? 'Untitled',
+                                moviePath:
+                                    thumbnail['fileLocation'] ?? 'Untitled',
                               ));
                             }
                           } catch (e) {

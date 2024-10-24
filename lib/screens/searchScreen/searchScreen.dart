@@ -521,6 +521,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                                               movieName: item[
                                                                       'name'] ??
                                                                   'Untitled',
+                                                              moviePath: item[
+                                                                      'path'] ??
+                                                                  'Untitled',
                                                             ));
                                                           }
                                                         } catch (e) {
@@ -647,6 +650,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         Get.to(VideoListScreen(
                                           urls: fetchedVideoUrls,
                                           movieName: item['name'] ?? 'Untitled',
+                                          moviePath: item['path'] ?? 'Untitled',
                                         ));
                                       }
                                     }
