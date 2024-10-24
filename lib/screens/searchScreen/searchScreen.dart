@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:reelies/screens/searchScreen/searchList.dart';
+import 'package:reelies/screens/searchScreen/searchErrorScreen.dart';
 import 'package:reelies/screens/searchScreen/sortFilterChips/categoryChips.dart';
 import 'package:reelies/screens/searchScreen/sortFilterChips/genreChips.dart';
 import 'package:reelies/screens/searchScreen/sortFilterChips/regionChips.dart';
 import 'package:reelies/screens/searchScreen/sortFilterChips/sortChips.dart';
 import 'package:reelies/screens/searchScreen/sortFilterChips/timeChips.dart';
 import 'package:http/http.dart' as http;
+import 'package:reelies/utils/constants.dart';
 import '../../utils/appColors.dart';
 import '../reels/VideoListScreen.dart';
 import 'filterResultScreen.dart';
@@ -25,6 +26,9 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   String apiKey = dotenv.env['API_KEY'] ?? '';
   List<Map<String, String>> gridMap = [];
+  List<Map<String, String>> searchResults = []; // For search results
+  bool isLoading = false;
+  String errorMessage = '';
 
   @override
   void initState() {
@@ -48,7 +52,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
             String updatedPath = fileLocation.replaceFirst(
                 'uploads/thumbnail/', 'http://$apiKey:8765/thumbnails/');
-            print("trending parsed: $updatedPath,  $sliderName");
             return {
               'path': updatedPath,
               'id': sliderId,
@@ -57,8 +60,58 @@ class _SearchScreenState extends State<SearchScreen> {
           }).toList();
         });
       }
+      print("trending now: $gridMap");
     } catch (e) {
       print("error: $e");
+    }
+  }
+
+  // Fetch search results API
+  Future<void> fetchSearchResults(String query) async {
+    setState(() {
+      isLoading = true;
+      errorMessage = ''; // Clear previous error messages
+    });
+
+    try {
+      final url = Uri.parse("http://$apiKey:8000/user/searchItem?name=$query");
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List sliders = data['data'] ?? [];
+
+        if (sliders.isEmpty) {
+          setState(() {
+            errorMessage = 'No results found for "$query"';
+            searchResults = []; // Clear any previous search results
+            isLoading = false;
+          });
+        } else {
+          setState(() {
+            searchResults = sliders.map((slider) {
+              String fileLocation = slider['fileLocation'] as String? ?? '';
+              String sliderName = (slider['name'] ?? '').toString();
+              String sliderId = (slider['_id'] ?? '').toString();
+
+              String updatedPath = fileLocation.replaceFirst(
+                  'uploads/thumbnail/', 'http://$apiKey:8765/thumbnails/');
+              return {
+                'path': updatedPath,
+                'id': sliderId,
+                'name': sliderName,
+              };
+            }).toList();
+            isLoading = false;
+          });
+        }
+        print("searchResults: $searchResults");
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'An error occurred: $e';
+        isLoading = false;
+      });
     }
   }
 
@@ -125,7 +178,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     width: 260.w,
                     child: TextField(
                       onSubmitted: (value) {
-                        Get.to(() => SearchListScreen());
+                        fetchSearchResults(value);
                       },
                       style: TextStyle(
                           color: Colors.white, fontWeight: FontWeight.w400),
@@ -329,146 +382,360 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16),
-                child: GridView.builder(
-                  physics: BouncingScrollPhysics(),
-                  shrinkWrap: true,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12.0,
-                    mainAxisSpacing: 12.0,
-                    mainAxisExtent: 210,
-                  ),
-                  itemCount: gridMap.length,
-                  itemBuilder: (_, index) {
-                    final item = gridMap[index];
-                    return GestureDetector(
-                      onTap: () async {
-                        String? videoId =
-                            item['id']; // Access the thumbnail ID correctly
-                        try {
-                          final fetchedVideoUrls =
-                              await fetchVideoUrls(videoId!);
-
-                          if (fetchedVideoUrls.isEmpty) {
-                            // Show a modal if no video URLs are found
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Column(
+                child: errorMessage.isNotEmpty
+                    ? const SearchErrorScreen()
+                    : searchResults.isNotEmpty
+                        ? ListView.builder(
+                            itemCount: searchResults.length,
+                            itemBuilder: (_, index) {
+                              // Ensure that the map contains the keys 'path' and 'name'
+                              var item = searchResults[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: ListTile(
+                                  title: Stack(
                                     children: [
-                                      Image.asset(
-                                        "assets/images/chicken1.png",
-                                        height: 150,
+                                      Container(
+                                        height: 130.h,
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.colorGrey,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                height: 92.h,
+                                                width: 108.w,
+                                                child: ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  // Make sure you're using Image.network to load images from the 'path'
+                                                  child: Image.network(
+                                                    item['path'] ?? '',
+                                                    // Accessing the 'path' key from the map
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context,
+                                                        error, stackTrace) {
+                                                      return Icon(
+                                                        Icons.broken_image,
+                                                        size: 92.h,
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(width: 10.w),
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    bottom: 2),
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      item['name'] ?? '',
+                                                      // Accessing the 'name' key from the map
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .titleSmall!
+                                                          .merge(
+                                                            const TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color: AppColors
+                                                                  .colorWhiteHighEmp,
+                                                              fontSize: 16,
+                                                            ),
+                                                          ),
+                                                    ),
+                                                    SizedBox(height: 5.h),
+                                                    InkWell(
+                                                      onTap: () async {
+                                                        String? videoId = item[
+                                                            'id']; // Access the thumbnail ID correctly
+                                                        try {
+                                                          final fetchedVideoUrls =
+                                                              await fetchVideoUrls(
+                                                                  videoId!);
+
+                                                          if (fetchedVideoUrls
+                                                              .isEmpty) {
+                                                            // Show a modal if no video URLs are found
+                                                            showDialog(
+                                                              context: context,
+                                                              builder:
+                                                                  (BuildContext
+                                                                      context) {
+                                                                return AlertDialog(
+                                                                  title: Column(
+                                                                    children: [
+                                                                      Image
+                                                                          .asset(
+                                                                        "assets/images/chicken1.png",
+                                                                        height:
+                                                                            150,
+                                                                      ),
+                                                                      SizedBox(
+                                                                          height:
+                                                                              20),
+                                                                      Text(
+                                                                        "No Episodes Found!",
+                                                                        style: TextStyle(
+                                                                            fontSize:
+                                                                                26),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  actions: [
+                                                                    TextButton(
+                                                                      onPressed:
+                                                                          () {
+                                                                        Navigator.of(context)
+                                                                            .pop(); // Close the dialog
+                                                                      },
+                                                                      child:
+                                                                          Text(
+                                                                        "OK",
+                                                                        style: TextStyle(
+                                                                            fontSize:
+                                                                                20),
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                );
+                                                              },
+                                                            );
+                                                          } else {
+                                                            // Navigate to the video screen with the list of URLs
+                                                            Get.to(
+                                                                VideoListScreen(
+                                                              urls:
+                                                                  fetchedVideoUrls,
+                                                              movieName: item[
+                                                                      'name'] ??
+                                                                  'Untitled',
+                                                            ));
+                                                          }
+                                                        } catch (e) {
+                                                          print(
+                                                              'Error fetching video URLs: $e');
+                                                        }
+                                                      },
+                                                      child: Container(
+                                                        height: 32,
+                                                        width: 92,
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: AppColors
+                                                              .colorPrimary,
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(6),
+                                                        ),
+                                                        child: Center(
+                                                          child: Text(
+                                                            'Watch Now',
+                                                            style:
+                                                                Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .titleSmall!
+                                                                    .merge(
+                                                                      const TextStyle(
+                                                                        fontWeight:
+                                                                            FontWeight.w400,
+                                                                        color: AppColors
+                                                                            .colorWhiteHighEmp,
+                                                                        fontSize:
+                                                                            12,
+                                                                      ),
+                                                                    ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
-                                      SizedBox(height: 20),
-                                      Text(
-                                        "No Episodes Found!",
-                                        style: TextStyle(fontSize: 26),
+                                      Positioned(
+                                        top: 85,
+                                        left: 65,
+                                        child: const Icon(
+                                          Icons.play_circle_rounded,
+                                          color: AppColors.colorWhiteHighEmp,
+                                        ),
                                       ),
                                     ],
                                   ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context)
-                                            .pop(); // Close the dialog
-                                      },
-                                      child: Text(
-                                        "OK",
-                                        style: TextStyle(fontSize: 20),
+                                ),
+                              );
+                            },
+                          )
+                        : GridView.builder(
+                            physics: BouncingScrollPhysics(),
+                            shrinkWrap: true,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12.0,
+                              mainAxisSpacing: 12.0,
+                              mainAxisExtent: 210,
+                            ),
+                            itemCount: gridMap.length,
+                            itemBuilder: (_, index) {
+                              final item = gridMap[
+                                  index]; // Use search results if present
+
+                              return GestureDetector(
+                                onTap: () async {
+                                  String? videoId = item[
+                                      'id']; // Access the thumbnail ID correctly
+                                  try {
+                                    if (videoId != null) {
+                                      final fetchedVideoUrls =
+                                          await fetchVideoUrls(videoId!);
+
+                                      if (fetchedVideoUrls.isEmpty) {
+                                        // Show a modal if no video URLs are found
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              title: Column(
+                                                children: [
+                                                  Image.asset(
+                                                    "assets/images/chicken1.png",
+                                                    height: 150,
+                                                  ),
+                                                  SizedBox(height: 20),
+                                                  Text(
+                                                    "No Episodes Found!",
+                                                    style:
+                                                        TextStyle(fontSize: 26),
+                                                  ),
+                                                ],
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context)
+                                                        .pop(); // Close the dialog
+                                                  },
+                                                  child: Text(
+                                                    "OK",
+                                                    style:
+                                                        TextStyle(fontSize: 20),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      } else {
+                                        // Navigate to the video screen with the list of URLs
+                                        Get.to(VideoListScreen(
+                                          urls: fetchedVideoUrls,
+                                          movieName: item['name'] ?? 'Untitled',
+                                        ));
+                                      }
+                                    }
+                                  } catch (e) {
+                                    print('Error fetching video URLs: $e');
+                                  }
+                                },
+                                child: Stack(children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(
+                                        16.0,
                                       ),
                                     ),
-                                  ],
-                                );
-                              },
-                            );
-                          } else {
-                            // Navigate to the video screen with the list of URLs
-                            Get.to(VideoListScreen(
-                              urls: fetchedVideoUrls,
-                              movieName: item['name'] ?? 'Untitled',
-                            ));
-                          }
-                        } catch (e) {
-                          print('Error fetching video URLs: $e');
-                        }
-                      },
-                      child: Stack(children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(
-                              16.0,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.network(
-                                  "${gridMap.elementAt(index)['path']}",
-                                  // Use network image here
-                                  height: 170,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Icon(
-                                      Icons.broken_image,
-                                      size: 170,
-                                    ); // Display an error icon if the image fails to load
-                                  },
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "${gridMap.elementAt(index)['name']}",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleSmall!
-                                          .merge(
-                                            const TextStyle(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          child: Image.network(
+                                            item['path']!,
+                                            // Use network image here
+                                            height: 170,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              return Icon(
+                                                Icons.broken_image,
+                                                size: 170,
+                                              ); // Display an error icon if the image fails to load
+                                            },
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                item['name']!,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .titleSmall!
+                                                    .merge(
+                                                      const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w400,
+                                                        color: AppColors
+                                                            .colorWhiteHighEmp,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Positioned(
+                                      top: 125,
+                                      left: 127,
+                                      child: Container(
+                                        height: 22,
+                                        width: 22,
+                                        decoration: BoxDecoration(
+                                            color: AppColors.colorPrimary,
+                                            borderRadius:
+                                                BorderRadius.circular(4)),
+                                        child: Center(
+                                          child: Text(
+                                            '8.5',
+                                            style: TextStyle(
                                               fontWeight: FontWeight.w400,
                                               color:
                                                   AppColors.colorWhiteHighEmp,
-                                              fontSize: 12,
+                                              fontSize: 10,
                                             ),
                                           ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                                        ),
+                                      ))
+                                ]),
+                              );
+                            },
                           ),
-                        ),
-                        Positioned(
-                            top: 125,
-                            left: 127,
-                            child: Container(
-                              height: 22,
-                              width: 22,
-                              decoration: BoxDecoration(
-                                  color: AppColors.colorPrimary,
-                                  borderRadius: BorderRadius.circular(4)),
-                              child: Center(
-                                child: Text(
-                                  '8.5',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w400,
-                                    color: AppColors.colorWhiteHighEmp,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ),
-                            ))
-                      ]),
-                    );
-                  },
-                ),
               ),
             ),
           ],

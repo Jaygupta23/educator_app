@@ -8,6 +8,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:reelies/models/latestShowsModel.dart';
 import 'package:reelies/models/mostTrendingShowsModel.dart';
 import 'package:get/get.dart';
+import 'package:reelies/screens/homeScreen/ContinueWatching.dart';
 import 'package:reelies/screens/homeScreen/filterContent.dart';
 import 'package:reelies/screens/reels/VideoListScreen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -33,9 +34,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isHolding = false;
   bool _isEpisodeButtonVisible = false;
   Timer? _autoSlideTimer;
-  double _scale = 1.0; // Initial scale value
-  Color _containerColor = AppColors.colorPrimaryDark;
-  Color _containerTextColor = AppColors.colorWhiteHighEmp;
 
   // Set the initial index to a large number to simulate infinite looping
   late final PageController _pageController;
@@ -58,7 +56,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final List sliders = data['sliders'] ?? [];
-        print("data :$data");
         setState(() {
           imagePaths = sliders.map((slider) {
             String fileLocation = slider['fileLocation'] as String? ?? '';
@@ -165,7 +162,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-        print(jsonResponse);
         // Map shortsData to video URLs and replace the path
         final List<String> videoUrls = (jsonResponse['shortsData'] as List)
             .where((data) => data['fileLocation'] != null)
@@ -179,7 +175,6 @@ class _HomeScreenState extends State<HomeScreen> {
         // Add the trailerUrl at the 0th index of videoUrls
         videoUrls.insert(0, trailerUrl);
 
-        print("videos: $videoUrls");
         return videoUrls;
       } else {
         print('Server error: ${response.statusCode} - ${response.body}');
@@ -259,7 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Column(
                 children: [
                   SizedBox(
-                    height: screenHeight * 0.56,
+                    height: screenHeight * 0.53,
                     child: Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: isLoading
@@ -320,27 +315,28 @@ class _HomeScreenState extends State<HomeScreen> {
                                             final sliderName =
                                                 imagePaths[_currentPageIndex]
                                                     ['name'];
-
-                                            print("sliderName: $sliderName");
+                                            final sliderPath =
+                                                imagePaths[_currentPageIndex]
+                                                    ['path'];
 
                                             try {
                                               if (sliderType == 'Trailer') {
-                                                print("object");
                                                 final fetchedVideoUrls =
                                                     await fetchVideoUrls(
                                                         sliderId!,
                                                         sliderTrailer!);
-                                                print(fetchedVideoUrls);
 
                                                 if (fetchedVideoUrls
                                                     .isNotEmpty) {
-                                                  String movieName = sliderName ??
-                                                      ''; // Ensure movieName is non-null
-
+                                                  String movieName =
+                                                      sliderName ?? '';
+                                                  String moviePath =
+                                                      sliderPath ?? '';
                                                   // Navigate to the next page after the animation completes
                                                   Get.to(() => VideoListScreen(
-                                                      urls: fetchedVideoUrls,
-                                                      movieName: movieName));
+                                                        urls: fetchedVideoUrls,
+                                                        movieName: movieName,
+                                                      ));
                                                 } else {
                                                   print(
                                                       'No videos found for this trailer.');
@@ -415,8 +411,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     _isHolding = true;
                                                     controller
                                                         .play(); // Play the trailer on long press
-                                                    print(
-                                                        "Playing video from initialized controller.");
                                                   });
                                                 }
                                               } else {
@@ -621,147 +615,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   SizedBox(
                     height: 20,
                   ),
-                  Container(
-                    width: MediaQuery.of(context).size.width * .7,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        GestureDetector(
-                          onTap: () async {
-                            // Ensure _currentPageIndex is valid and within bounds
-                            if (_currentPageIndex < imagePaths.length) {
-                              final sliderId =
-                                  imagePaths[_currentPageIndex]['id'];
-                              final sliderTrailer =
-                                  imagePaths[_currentPageIndex]['trailerUrl'];
-                              final sliderType =
-                                  imagePaths[_currentPageIndex]['type'];
-                              final sliderName =
-                                  imagePaths[_currentPageIndex]['name'];
 
-                              print("sliderName: $sliderName");
-
-                              try {
-                                if (sliderType == 'Trailer') {
-                                  print("object");
-                                  final fetchedVideoUrls = await fetchVideoUrls(
-                                      sliderId!, sliderTrailer!);
-                                  print(fetchedVideoUrls);
-
-                                  // Trigger animation
-                                  setState(() {
-                                    _scale = 1.2; // Scale up
-
-                                    _containerColor =
-                                        AppColors.colorWhiteHighEmp;
-                                    _containerTextColor =
-                                        AppColors.colorPrimary; // Fade out
-                                  });
-
-                                  // Wait for the animation to complete
-                                  await Future.delayed(
-                                      const Duration(milliseconds: 300));
-
-                                  // Revert the animation to the original state after a delay
-                                  setState(() {
-                                    _scale = 1.0; // Scale back to original
-
-                                    _containerColor =
-                                        AppColors.colorPrimaryDark;
-                                    _containerTextColor =
-                                        AppColors.colorWhiteHighEmp;
-                                  });
-
-                                  if (fetchedVideoUrls.isNotEmpty) {
-                                    String movieName = sliderName ??
-                                        ''; // Ensure movieName is non-null
-
-                                    // Navigate to the next page after the animation completes
-                                    Get.to(() => VideoListScreen(
-                                        urls: fetchedVideoUrls,
-                                        movieName: movieName));
-                                  } else {
-                                    print('No videos found for this trailer.');
-                                  }
-                                }
-                              } catch (e) {
-                                print('Error fetching video URLs: $e');
-                              }
-                            } else {
-                              print("Current page index is out of bounds");
-                            }
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            // Duration of the animation
-                            curve: Curves.easeInOut,
-                            // Smooth animation curve
-                            transform: Matrix4.identity()..scale(_scale),
-                            // Apply scaling effect
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 8, horizontal: 14),
-                              decoration: BoxDecoration(
-                                color: _containerColor,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.5),
-                                    // Shadow color
-                                    offset: Offset(0, 4),
-                                    // Shadow offset
-                                    blurRadius: 8,
-                                    // Blur radius
-                                    spreadRadius: 2, // Spread radius
-                                  ),
-                                ],
-                                // Use state variable to animate color
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.play_arrow_rounded,
-                                      size: 25, color: _containerTextColor),
-                                  Text("Play ",
-                                      style: TextStyle(
-                                          fontSize: 18,
-                                          color: _containerTextColor)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 8, horizontal: 14),
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.5),
-                                // Shadow color
-                                offset: Offset(0, 4),
-                                // Shadow offset
-                                blurRadius: 8,
-                                // Blur radius
-                                spreadRadius: 2, // Spread radius
-                              ),
-                            ],
-                            color:
-                                AppColors.colorWhiteHighEmp.withOpacity(0.88),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            imagePaths.isNotEmpty
-                                ? "Episodes - ${imagePaths[_currentPageIndex % imagePaths.length]['episode'] ?? '0'}"
-                                : "Episodes - 0",
-                            // Fallback text if imagePaths is empty
-                            style: TextStyle(
-                                fontSize: 18, color: AppColors.colorPrimary),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 30),
                   // Add spacing between image and indicator
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -792,6 +646,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const filterContent(),
               // Title and "Show all" button for Latest Shows
+              const ContinueWatching(),
 
               const MostTrendingShowsModel(),
 

@@ -1,15 +1,18 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:reelies/models/myBottomNavModel.dart';
 import 'package:reelies/screens/reels/components/ListModals.dart';
 import 'package:reelies/utils/appColors.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class VideoListScreen extends StatefulWidget {
   final List<String> urls; // List of video URLs
-  final String movieName; // List of video URLs
+  final String movieName;
 
   const VideoListScreen({Key? key, required this.urls, required this.movieName})
       : super(key: key);
@@ -28,31 +31,28 @@ class _VideoListScreenState extends State<VideoListScreen> {
   double _sliderMax = 1.0;
   bool isLiked = false;
   bool isBookmark = false;
-  late Future<void> _initializeVideoPlayerFuture;
+  Future<void>? _initializeVideoPlayerFuture;
   Duration _currentTime = Duration.zero;
   Duration _totalDuration = Duration.zero;
   double _playbackSpeed = 1.0; // Default playback speed
   List<double> _speedOptions = [0.5, 1.0, 1.25, 1.5];
-  PageController _pageController = PageController();
+  late PageController _pageController;
+  int? savedTimestamp;
 
+  @override
   void initState() {
     super.initState();
-    // Retrieve initialIndex from Get arguments if available
-    final int? initialIndex = Get.arguments as int?;
-    if (initialIndex != null) {
-      _currentVideoIndex =
-          initialIndex; // Set current video index from arguments
-    }
-    print(widget.urls);
-    print("hello ${widget.movieName}");
-    if (widget.urls.isNotEmpty) {
+    _pageController = PageController(initialPage: _currentVideoIndex);
+    _loadVideoProgress().then((timestamp) {
+      setState(() {
+        savedTimestamp = timestamp ?? 0;
+      });
       _initializeVideo();
-    } else {
-      print("No video URLs provided.");
-    }
+    });
+
     _pageController.addListener(() {
       int nextPage = _pageController.page!.round();
-      if (nextPage != _currentVideoIndex) {
+      if (nextPage != _currentVideoIndex && nextPage < widget.urls.length) {
         setState(() {
           _currentVideoIndex = nextPage;
         });
@@ -62,83 +62,134 @@ class _VideoListScreenState extends State<VideoListScreen> {
   }
 
   void _initializeVideo() {
-    print("Initializing video at index $_currentVideoIndex");
+    if (_currentVideoIndex < 0 || _currentVideoIndex >= widget.urls.length) {
+      return;
+    }
 
-    // Dispose of the previous controller if it exists and is initialized
     if (_controller != null && _controller!.value.isInitialized) {
       _controller!.pause();
-      print("Controller paused and disposed");
       _controller!.dispose();
     }
 
-    // Initialize a new controller for the current video index
     _controller =
         VideoPlayerController.network(widget.urls[_currentVideoIndex]);
 
-    // Initialize the video player and catch any errors
     _initializeVideoPlayerFuture = _controller!.initialize().then((_) {
       if (mounted) {
-        // Only call setState if the widget is still mounted
-        print("Video successfully initialized, playing now.");
         setState(() {
           _sliderMax = _controller!.value.duration.inSeconds.toDouble();
           _sliderValue = 0;
           _totalDuration = _controller!.value.duration;
           _currentTime = _controller!.value.position;
-          _controller!
-              .play(); // Automatically start playing the newly initialized video
-          _isPlaying = true;
         });
+
+        if (savedTimestamp != null && savedTimestamp! > 0) {
+          _controller!.seekTo(Duration(seconds: savedTimestamp!));
+        }
+
+        _controller!.play();
+        _isPlaying = true;
       }
     }).catchError((error) {
       if (mounted) {
-        // Handle errors and show dialog only if the widget is still mounted
-        print("Error initializing video: $error");
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Playback Error'),
-            content: Text(
-                'This video cannot be played due to an unsupported codec or a playback issue.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('OK'),
-              ),
-            ],
-          ),
-        );
+        _showErrorDialog('Playback Error',
+            'This video cannot be played due to an unsupported codec or a playback issue.');
       }
     });
 
-    // Listen for changes in video playback
-    _controller!.addListener(() {
-      if (_controller!.value.isInitialized && mounted) {
-        setState(() {
-          // Update slider value and current time during playback
-          _sliderValue = _controller!.value.position.inSeconds
-              .toDouble()
-              .clamp(0, _sliderMax);
-          _currentTime = _controller!.value.position;
+    _initializeVideoPlayerFuture?.then((_) {
+      _controller!.addListener(() {
+        if (_controller!.value.isInitialized && mounted) {
+          setState(() {
+            _sliderValue = _controller!.value.position.inSeconds.toDouble();
+            _currentTime = _controller!.value.position;
 
-          // Check if the video has ended and load the next one if available
-          if (_controller!.value.position >= _controller!.value.duration) {
-            if (_currentVideoIndex + 1 < widget.urls.length) {
-              setState(() {
-                _currentVideoIndex++;
-              });
-              // Load and initialize the next video
-              _initializeVideo();
-            } else {
-              // Handle the end of the playlist
-              _controller!.pause();
-              _isPlaying = false;
-              print("End of playlist reached.");
+            if (_controller!.value.position >= _controller!.value.duration) {
+              if (_currentVideoIndex + 1 < widget.urls.length) {
+                setState(() {
+                  _currentVideoIndex++;
+                });
+                _initializeVideo();
+              } else {
+                _controller!.pause();
+                _isPlaying = false;
+              }
             }
-          }
-        });
-      }
+          });
+          _saveVideoProgress();
+        }
+      });
     });
+  }
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveVideoProgress() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> savedProgress = prefs.getStringList("videoProgress") ?? [];
+
+    if (_currentVideoIndex >= 0 && _currentVideoIndex < widget.urls.length) {
+      String currentVideoId = widget.urls[_currentVideoIndex];
+
+      int existingIndex = savedProgress.indexWhere((item) {
+        Map<String, dynamic> progress = jsonDecode(item);
+        return progress['movieName'] == widget.movieName;
+      });
+
+      Map<String, dynamic> currentProgress = {
+        "movieName": widget.movieName,
+        "videoId": currentVideoId,
+        "timestamp": _controller!.value.position.inSeconds,
+      };
+
+      if (existingIndex != -1) {
+        savedProgress[existingIndex] = jsonEncode(currentProgress);
+      } else {
+        savedProgress.add(jsonEncode(currentProgress));
+      }
+
+      await prefs.setStringList("videoProgress", savedProgress);
+    }
+  }
+
+  Future<int?> _loadVideoProgress() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? continueWatching = prefs.getString("continueWatch");
+
+    List<String> savedProgress = prefs.getStringList("videoProgress") ?? [];
+
+    int existingIndex = savedProgress.indexWhere((item) {
+      Map<String, dynamic> progress = jsonDecode(item);
+      return progress['movieName'] == widget.movieName;
+    });
+
+    if (existingIndex != -1) {
+      Map<String, dynamic> lastProgress =
+          jsonDecode(savedProgress[existingIndex]);
+      int savedTimestamp = lastProgress["timestamp"];
+
+      if (continueWatching == "true") {
+        return savedTimestamp;
+      } else {
+        return 0;
+      }
+    } else {
+      return 0;
+    }
   }
 
   @override
@@ -279,7 +330,8 @@ class _VideoListScreenState extends State<VideoListScreen> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             color: AppColors.colorWhiteHighEmp,
-            onPressed: () => Get.back(), // Navigate back using GetX
+            onPressed: () => Get.offAll(
+                () => MyBottomNavModel()), // Navigate back using GetX
           ),
           title: Text(
             widget.movieName,

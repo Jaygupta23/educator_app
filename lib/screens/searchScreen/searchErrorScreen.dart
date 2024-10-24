@@ -27,62 +27,12 @@ class _SearchErrorScreenState extends State<SearchErrorScreen> {
               child: IntrinsicHeight(
                 child: Column(
                   children: [
+                    SizedBox(height: 70.h),
                     Padding(
-                      padding: const EdgeInsets.only(left: 16, right: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              Get.offAll(SearchScreen());
-                            },
-                            child: Icon(
-                              Icons.arrow_back,
-                              color: AppColors.colorWhiteHighEmp,
-                              size: 24,
-                            ),
-                          ),
-                          Container(
-                            height: 55.h,
-                            width: 230.w,
-                            child: TextField(
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w400),
-                              decoration: InputDecoration(
-                                hintStyle: TextStyle(color: Colors.white),
-                                prefixIcon:
-                                    Icon(Icons.search, color: Colors.white),
-                                hintText: "Search",
-                                filled: true,
-                                fillColor: AppColors.colorGrey,
-                                border: OutlineInputBorder(
-                                    borderSide: BorderSide.none,
-                                    borderRadius: BorderRadius.circular(8)),
-                              ),
-                            ),
-                          ),
-                          Container(
-                            height: 55.h,
-                            width: 50.w,
-                            decoration: BoxDecoration(
-                                color: AppColors.colorGrey,
-                                borderRadius: BorderRadius.circular(8)),
-                            child: Icon(
-                              Icons.filter_list,
-                              size: 28,
-                              color: AppColors.colorSecondaryLight,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 90.h),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(14),
                       child: Container(
                         height: 218.h,
-                        width: 208.w,
+                        width: 218.w,
                         child: Image.asset('assets/images/error.png'),
                       ),
                     ),
@@ -109,7 +59,7 @@ class _SearchErrorScreenState extends State<SearchErrorScreen> {
                     ),
                     SizedBox(height: 10.h),
                     Text(
-                      'Sorry, the keyword you entered could \nnot be found. Try to check again or \nsearch with other keywords.',
+                      'Sorry, the character you entered could \nnot be found. Try to check again or \nsearch with other characters.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 14,

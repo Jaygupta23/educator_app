@@ -43,7 +43,7 @@ class _MostTrendingShowsModelState extends State<MostTrendingShowsModel> {
 
             String updatedPath = fileLocation.replaceFirst(
                 'uploads/thumbnail/', 'http://$apiKey:8765/thumbnails/');
-            print("trending parsed: $updatedPath,  $sliderName");
+
             return {
               'path': updatedPath,
               'id': sliderId,
@@ -58,7 +58,6 @@ class _MostTrendingShowsModelState extends State<MostTrendingShowsModel> {
   }
 
   Future<List<String>> fetchVideoUrls(String movieID) async {
-    print("movie: $movieID");
     final url = Uri.parse('http://$apiKey:8000/getMovieData/');
 
     try {
@@ -193,10 +192,10 @@ class _MostTrendingShowsModelState extends State<MostTrendingShowsModel> {
                         );
                       } else {
                         // Navigate to the video screen with the list of URLs
-                        Get.to(VideoListScreen(
-                          urls: fetchedVideoUrls,
-                          movieName: item['name'] ?? 'Untitled',
-                        ));
+                        Get.to(() => VideoListScreen(
+                              urls: fetchedVideoUrls,
+                              movieName: item['name'] ?? 'Untitled',
+                            ));
                       }
                     } catch (e) {
                       print('Error fetching video URLs: $e');
