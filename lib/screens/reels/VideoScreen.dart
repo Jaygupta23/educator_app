@@ -38,24 +38,31 @@ class _VideoScreenState extends State<VideoScreen> {
   Future<void> _fetchVideoUrls({bool isLoadMore = false}) async {
     try {
       final response = await http.get(
-        Uri.parse("http://$apiKey:8000/user/trendingTrailers"),
+        Uri.parse("http://192.168.1.48:8000/user/trendingTrailers"),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final List mapResponse = data['trailersData'] ?? [];
-
         setState(
           () {
-            // Map to a list of objects containing id, name, and trailerUrl
-            final newVideoData = mapResponse
-                .map((trailer) => {
-                      "id": trailer['_id'],
-                      "name": trailer['name'],
-                      "trailerUrl": trailer['trailerUrl'],
-                      "shortsData": trailer['shorts']
-                    })
-                .toList();
+            // Map to a list of objects containing id, name, trailerUrl, and updated thumbnailUrl
+            final newVideoData = mapResponse.map((trailer) {
+              // Update the thumbnail path
+              String updatedThumbnailPath = trailer['fileLocation']
+                  .replaceFirst(
+                      'uploads/thumbnail/', 'http://$apiKey:8765/thumbnails/');
+
+              return {
+                "id": trailer['_id'],
+                "name": trailer['name'],
+                "trailerUrl": trailer['trailerUrl'],
+                "thumbnailUrl": updatedThumbnailPath,
+                // Use the updated thumbnail path
+                "shortsData": trailer['shorts'],
+                // Keep the shorts unchanged
+              };
+            }).toList();
 
             if (isLoadMore) {
               videoUrls.addAll(newVideoData);

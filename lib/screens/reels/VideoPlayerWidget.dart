@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:http/http.dart' as http;
 
+import '../../utils/appColors.dart';
 import 'VideoListScreen.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
@@ -329,30 +330,45 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           TweenAnimationBuilder(
-                            tween: Tween<double>(
-                                begin: 1.0, end: isLiked ? 1.1 : 1.0),
+                            tween: Tween(begin: 1.0, end: isLiked ? 1.1 : 1.0),
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.elasticInOut,
                             builder: (context, double scale, child) {
                               return Transform.scale(
                                 scale: scale,
-                                child: IconButton(
-                                  onPressed: _onIconPressed,
-                                  icon: Icon(
-                                    Icons.favorite_rounded,
-                                    shadows: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.5),
-                                        spreadRadius: 2,
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 3),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      onPressed: _onIconPressed,
+                                      icon: Icon(
+                                        Icons.favorite_rounded,
+                                        shadows: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.5),
+                                            spreadRadius: 2,
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
+                                        size: 38,
+                                        color: isLiked
+                                            ? Colors.red[400]
+                                            : Colors.white,
                                       ),
-                                    ],
-                                    size: 40,
-                                    color: isLiked
-                                        ? Colors.red[400]
-                                        : Colors.white,
-                                  ),
+                                    ),
+                                    Transform.translate(
+                                      offset: const Offset(0, -10),
+                                      child: Text(
+                                        "1M",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: AppColors.colorWhiteHighEmp,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               );
                             },
@@ -369,7 +385,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                                   onPressed: _onStarPressed,
                                   icon: Icon(
                                     Icons.star_rounded,
-                                    size: 40,
+                                    size: 38,
                                     shadows: [
                                       BoxShadow(
                                         color: Colors.black.withOpacity(0.5),
@@ -392,6 +408,8 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                               final reelsTrailer =
                                   widget.videoData['trailerUrl'];
                               final reelsName = widget.videoData['name'];
+                              final thumbnailUrl =
+                                  widget.videoData['thumbnailUrl'];
 
                               print(
                                   "sliderName: $reelsId,$reelsTrailer ,hello-$reelsName");
@@ -407,7 +425,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                                       ''; // Ensure movieName is non-null
                                   Get.to(() => VideoListScreen(
                                       urls: fetchedVideoUrls,
-                                      moviePath: "path/iamge",
+                                      moviePath: thumbnailUrl,
                                       movieName: movieName));
                                 } else {
                                   print('No videos found for this trailer.');
@@ -418,7 +436,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                             },
                             icon: Icon(
                               Icons.layers,
-                              size: 40,
+                              size: 38,
                               color: Colors.white,
                               shadows: [
                                 BoxShadow(
@@ -436,7 +454,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                             },
                             icon: Icon(
                               Icons.share,
-                              size: 40,
+                              size: 38,
                               color: Colors.white,
                               shadows: [
                                 BoxShadow(

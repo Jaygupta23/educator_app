@@ -40,7 +40,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
   Duration _currentTime = Duration.zero;
   Duration _totalDuration = Duration.zero;
   double _playbackSpeed = 1.0; // Default playback speed
-  List<double> _speedOptions = [0.5, 1.0, 1.25, 1.5];
+  List<double> _speedOptions = [0.5, 1.0, 1.25, 1.5, 2.0];
   late PageController _pageController;
   int? savedTimestamp;
 
@@ -125,21 +125,51 @@ class _VideoListScreenState extends State<VideoListScreen> {
             _currentTime = _controller!.value.position;
 
             if (_controller!.value.position >= _controller!.value.duration) {
-              if (_currentVideoIndex + 1 < widget.urls.length) {
-                setState(() {
-                  _currentVideoIndex++;
-                });
-                _initializeVideo();
-              } else {
-                _controller!.pause();
-                _isPlaying = false;
-              }
+              // If the video finishes playing, remove the progress
+              _handleVideoEnd();
+            } else {
+              // Save progress while playing
+              _saveVideoProgress();
             }
           });
-          _saveVideoProgress();
         }
       });
     });
+  }
+
+  void _handleVideoEnd() {
+    if (_currentVideoIndex + 1 < widget.urls.length) {
+      setState(() {
+        _currentVideoIndex++;
+      });
+      _initializeVideo();
+    } else {
+      _controller!.pause();
+      _isPlaying = false;
+      _removeVideoProgress().then((_) {
+        // Return to the previous screen with a result to refresh the list
+        if (mounted) {
+          Get.back(result: true);
+        }
+      });
+    }
+  }
+
+  Future<void> _removeVideoProgress() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> savedProgress = prefs.getStringList("videoProgress") ?? [];
+
+    int existingIndex = savedProgress.indexWhere((item) {
+      Map<String, dynamic> progress = jsonDecode(item);
+      return progress['movieName'] == widget.movieName;
+    });
+
+    if (existingIndex != -1) {
+      savedProgress.removeAt(existingIndex);
+      await prefs.setStringList("videoProgress", savedProgress);
+    }
+
+    print("Updated savedProgress after removal: $savedProgress");
   }
 
   void _showErrorDialog(String title, String message) {
@@ -360,42 +390,56 @@ class _VideoListScreenState extends State<VideoListScreen> {
             style: TextStyle(color: AppColors.colorWhiteHighEmp),
           ),
           actions: [
-            Container(
-              padding: EdgeInsets.only(left: 8.0),
-              margin: EdgeInsets.only(right: 10),
-              height: 35,
-              decoration: BoxDecoration(
-                color: AppColors.colorError,
-                // Replace with your desired background color
-                borderRadius:
-                    BorderRadius.circular(4.0), // Optional: rounded corners
+            PopupMenuButton<double>(
+              icon: Icon(
+                Icons.settings_rounded,
+                color: AppColors.colorWhiteHighEmp,
+                size: 30,
               ),
-              child: DropdownButton<double>(
-                value: _playbackSpeed,
-                dropdownColor: AppColors.colorError,
-                borderRadius: BorderRadius.circular(8.0),
-
-                items: _speedOptions.map((double speed) {
-                  return DropdownMenuItem<double>(
+              color: Color(0xFF2C2C2C),
+              // Set the dropdown background color
+              offset: Offset(0, 40),
+              // Adjust vertical offset if needed
+              itemBuilder: (BuildContext context) {
+                return _speedOptions.map((double speed) {
+                  return PopupMenuItem<double>(
                     value: speed,
-                    child: Text(
-                      '${speed}x',
-                      style: TextStyle(
-                          color: AppColors.colorWhiteHighEmp, fontSize: 18),
+                    child: Center(
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Text(
+                            '${speed}x',
+                            style: TextStyle(
+                              color: AppColors.colorWhiteHighEmp,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (_playbackSpeed ==
+                              speed) // Show underline only if selected
+                            Positioned(
+                              bottom: 0,
+                              // Adjust this to control the space between text and underline
+                              child: Container(
+                                width: 25, // Width of the underline
+                                height: 2, // Thickness of the underline
+
+                                decoration: BoxDecoration(
+                                    color: AppColors.colorError,
+                                    borderRadius: BorderRadius.circular(
+                                        10)), // Color of the underline
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   );
-                }).toList(),
-                onChanged: (double? newValue) {
-                  if (newValue != null) {
-                    _changePlaybackSpeed(newValue);
-                  }
-                },
-                underline: SizedBox(),
-                iconSize: 30,
-                // Removes default underline
-                iconEnabledColor:
-                    AppColors.colorWhiteHighEmp, // Dropdown icon color
-              ),
+                }).toList();
+              },
+              onSelected: (selectedSpeed) {
+                _changePlaybackSpeed(selectedSpeed);
+              },
             ),
           ],
         ),

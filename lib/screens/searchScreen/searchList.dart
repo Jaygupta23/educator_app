@@ -296,14 +296,14 @@ class _SearchListScreenState extends State<SearchListScreen> {
                                                           },
                                                         );
                                                       } else {
-                                                        // Navigate to the video screen with the list of URLs
-                                                        Get.to(VideoListScreen(
-                                                          urls:
-                                                              fetchedVideoUrls,
-                                                          movieName:
-                                                              item['name'] ??
-                                                                  'Untitled',
-                                                        ));
+                                                        // // Navigate to the video screen with the list of URLs
+                                                        // Get.to(VideoListScreen(
+                                                        //   urls:
+                                                        //       fetchedVideoUrls,
+                                                        //   movieName:
+                                                        //   item['name'] ??
+                                                        //       'Untitled',
+                                                        // ));
                                                       }
                                                     } catch (e) {
                                                       print(

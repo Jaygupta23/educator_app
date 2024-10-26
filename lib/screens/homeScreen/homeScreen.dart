@@ -12,6 +12,7 @@ import 'package:reelies/screens/homeScreen/ContinueWatching.dart';
 import 'package:reelies/screens/homeScreen/filterContent.dart';
 import 'package:reelies/screens/reels/VideoListScreen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 import '../../utils/appColors.dart';
 import 'notificationScreen.dart';
@@ -41,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+
     _currentPageIndex = 0; // Initialize current page index
     _controllers = []; // Initialize controllers list
     _pageController = PageController(
@@ -644,7 +646,7 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(
                 height: 25,
               ),
-              const filterContent(),
+              const FilterContent(),
               // Title and "Show all" button for Latest Shows
               const ContinueWatching(),
 

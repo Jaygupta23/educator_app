@@ -28,27 +28,28 @@ class _ContinueWatchingState extends State<ContinueWatching> {
     // Fetch from local storage
     final prefs = await SharedPreferences.getInstance();
     List<String> savedProgress = prefs.getStringList("videoProgress") ?? [];
-    print("savedProgress : $savedProgress");
+    print("savedProgress1 : $savedProgress");
 
-    // Process the saved progress and map it into a list of movies
     setState(() {
-      continueWatchingMovies = savedProgress.map((item) {
-        Map<String, dynamic> progress = jsonDecode(item);
-        String moviePath = progress['moviePath'] ?? 'Unknown';
-        String movieName =
-            progress['movieName'] ?? 'Unknown'; // Ensure movie name is present
-        String videoUrl =
-            progress['videoId'] ?? ''; // Ensure videoId is present
+      continueWatchingMovies = savedProgress.isEmpty
+          ? [] // Empty list when no progress
+          : savedProgress.map((item) {
+              Map<String, dynamic> progress = jsonDecode(item);
+              String moviePath = progress['moviePath'] ?? 'Unknown';
+              String movieName = progress['movieName'] ??
+                  'Unknown'; // Ensure movie name is present
+              String videoUrl =
+                  progress['videoId'] ?? ''; // Ensure videoId is present
 
-        print(
-            'Movie: $movieName, Video URL: $videoUrl, moviePath : $moviePath'); // Debugging line
+              print(
+                  'Movie: $movieName, Video URL: $videoUrl, moviePath : $moviePath'); // Debugging line
 
-        return {
-          'name': movieName,
-          'moviePath': moviePath,
-          'videoUrl': videoUrl,
-        };
-      }).toList();
+              return {
+                'name': movieName,
+                'moviePath': moviePath,
+                'videoUrl': videoUrl,
+              };
+            }).toList();
     });
 
     if (continueWatchingMovies.isEmpty) {
@@ -92,13 +93,19 @@ class _ContinueWatchingState extends State<ContinueWatching> {
                       return InkWell(
                         onTap: () async {
                           final prefs = await SharedPreferences.getInstance();
-                          await prefs.setString("continueWatch",
-                              "true"); // Set flag when tapping from Continue Watching
-                          Get.to(() => VideoListScreen(
+                          await prefs.setString("continueWatch", "true");
+
+                          // Listen for result from VideoListScreen
+                          final result = await Get.to(() => VideoListScreen(
                                 urls: [item['videoUrl']!],
                                 movieName: item['name'] ?? 'Untitled',
                                 moviePath: item['moviePath'] ?? '',
                               ));
+
+                          // Refresh the continue watching list if VideoListScreen removed the progress
+                          if (result == true) {
+                            fetchContinueWatchingMovies();
+                          }
                         },
                         child: Padding(
                           padding: EdgeInsets.only(
