@@ -43,6 +43,9 @@ class _VideoListScreenState extends State<VideoListScreen> {
   List<double> _speedOptions = [0.5, 1.0, 1.25, 1.5, 2.0];
   late PageController _pageController;
   int? savedTimestamp;
+  bool isCountdownVisible = false;
+  int countdown = 10;
+  Timer? countdownTimer;
 
   @override
   void initState() {
@@ -124,6 +127,13 @@ class _VideoListScreenState extends State<VideoListScreen> {
             _sliderValue = _controller!.value.position.inSeconds.toDouble();
             _currentTime = _controller!.value.position;
 
+            if (_controller!.value.duration.inSeconds -
+                    _controller!.value.position.inSeconds <=
+                10) {
+              _startCountdown();
+            } else {
+              _stopCountdownTimer();
+            }
             if (_controller!.value.position >= _controller!.value.duration) {
               // If the video finishes playing, remove the progress
               _handleVideoEnd();
@@ -135,6 +145,101 @@ class _VideoListScreenState extends State<VideoListScreen> {
         }
       });
     });
+  }
+
+  void _togglePlayPause() {
+    if (_controller == null) return;
+
+    if (_isPlaying) {
+      _controller!.pause();
+      setState(() {
+        _isPlaying = false;
+        _showControlIcon = true;
+      });
+      // Stop the countdown timer
+      countdownTimer?.cancel();
+    } else {
+      _controller!.play();
+      setState(() {
+        _isPlaying = true;
+        _showControlIcon = true;
+      });
+
+      // Resume or start the countdown if within the last 10 seconds
+      if (_controller!.value.duration.inSeconds -
+              _controller!.value.position.inSeconds <=
+          10) {
+        _startCountdown();
+      }
+      final remainingTime = _controller!.value.duration.inSeconds -
+          _controller!.value.position.inSeconds;
+      if (remainingTime <= 10) {
+        _resumeCountdown(remainingTime);
+      }
+
+      // Start a timer to hide control icon after a delay
+      _hideControlIconTimer?.cancel();
+      _hideControlIconTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() {
+            _showControlIcon = false;
+          });
+        }
+      });
+    }
+  }
+
+  void _startCountdown() {
+    // Make the countdown visible
+    if (_isPlaying && !isCountdownVisible) {
+      setState(() {
+        isCountdownVisible = true;
+      });
+
+      countdownTimer?.cancel();
+      countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        final remainingTime = _controller!.value.duration.inSeconds -
+            _controller!.value.position.inSeconds;
+
+        if (remainingTime <= 0 || !_isPlaying) {
+          timer.cancel();
+        } else if (remainingTime <= 10) {
+          setState(() {
+            countdown =
+                remainingTime; // Set countdown to seconds left within the last 10 seconds
+          });
+        } else {
+          // If more than 10 seconds are left, stop showing countdown
+          _stopCountdownTimer();
+        }
+      });
+    }
+  }
+
+  void _resumeCountdown(int remainingTime) {
+    if (_isPlaying && isCountdownVisible) {
+      countdownTimer?.cancel();
+      countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (remainingTime <= 0 || !_isPlaying) {
+          timer.cancel();
+        } else {
+          setState(() {
+            countdown = remainingTime;
+            remainingTime -= 1; // Decrease remaining time each second
+          });
+        }
+      });
+    }
+  }
+
+  void _stopCountdownTimer() {
+    if (isCountdownVisible) {
+      setState(() {
+        isCountdownVisible = false;
+        countdown = 10; // Reset countdown to 10 for the next video
+      });
+      countdownTimer?.cancel();
+    }
   }
 
   void _handleVideoEnd() {
@@ -249,6 +354,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
     _controller?.dispose();
     _pageController.dispose();
     _hideControlIconTimer?.cancel();
+    countdownTimer?.cancel();
     super.dispose();
   }
 
@@ -258,34 +364,6 @@ class _VideoListScreenState extends State<VideoListScreen> {
         _playbackSpeed = speed;
         _controller!
             .setPlaybackSpeed(_playbackSpeed); // Set the new playback speed
-      });
-    }
-  }
-
-  void _togglePlayPause() {
-    if (_controller == null) return;
-    if (_isPlaying) {
-      _controller!.pause();
-      setState(() {
-        _isPlaying = false;
-        _showControlIcon = true; // Keep control icon visible when paused
-      });
-      // Cancel timer when paused
-      _hideControlIconTimer?.cancel();
-    } else {
-      _controller!.play();
-      setState(() {
-        _isPlaying = true;
-        _showControlIcon = true; // Show control icon temporarily
-      });
-      // Start a timer to hide control icon after a delay
-      _hideControlIconTimer?.cancel();
-      _hideControlIconTimer = Timer(const Duration(seconds: 2), () {
-        if (mounted) {
-          setState(() {
-            _showControlIcon = false;
-          });
-        }
       });
     }
   }
@@ -504,6 +582,48 @@ class _VideoListScreenState extends State<VideoListScreen> {
                               )
                             : const CircularProgressIndicator(),
                       ),
+                      if (isCountdownVisible)
+                        Positioned(
+                          bottom: 80,
+                          child: Stack(
+                            children: [
+                              Container(
+                                width: MediaQuery.of(context).size.width,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                ),
+                              ),
+                              AnimatedContainer(
+                                duration: const Duration(seconds: 1),
+                                curve: Curves.linear,
+                                width:
+                                    (MediaQuery.of(context).size.width / 10) *
+                                        countdown,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.white,
+                                      Colors.white,
+                                    ],
+                                    stops: [0.2, 1.0],
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    "${countdown}s",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       if (_showControlIcon)
                         Stack(alignment: Alignment.center, children: [
                           Positioned(
@@ -639,7 +759,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                       ),
                       if (_showControlIcon)
                         Positioned(
-                            bottom: 100,
+                            bottom: 130,
                             right: 0,
                             child: SizedBox(
                               height: 250,
@@ -662,10 +782,13 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                             IconButton(
                                               onPressed: _onIconPressed,
                                               icon: Icon(
-                                                Icons.favorite_rounded,
+                                                isLiked
+                                                    ? Icons.favorite_rounded
+                                                    : Icons
+                                                        .favorite_outline_rounded,
                                                 shadows: [
                                                   BoxShadow(
-                                                    color: Colors.black
+                                                    color: Colors.grey
                                                         .withOpacity(0.5),
                                                     spreadRadius: 2,
                                                     blurRadius: 10,
@@ -674,8 +797,9 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                                 ],
                                                 size: 38,
                                                 color: isLiked
-                                                    ? Colors.red[400]
-                                                    : Colors.white,
+                                                    ? AppColors.colorError
+                                                    : AppColors
+                                                        .colorWhiteHighEmp,
                                               ),
                                             ),
                                             Transform.translate(
@@ -706,11 +830,13 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                         child: IconButton(
                                           onPressed: _onStarPressed,
                                           icon: Icon(
-                                            Icons.star_rounded,
+                                            isBookmark
+                                                ? Icons.bookmark_rounded
+                                                : Icons.bookmark_add_outlined,
                                             size: 38,
                                             shadows: [
                                               BoxShadow(
-                                                color: Colors.black
+                                                color: Colors.grey
                                                     .withOpacity(0.5),
                                                 spreadRadius: 2,
                                                 blurRadius: 10,
@@ -718,8 +844,8 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                               ),
                                             ],
                                             color: isBookmark
-                                                ? Colors.amber[300]
-                                                : Colors.white,
+                                                ? AppColors.colorAlert
+                                                : AppColors.colorWhiteHighEmp,
                                           ),
                                         ),
                                       );
@@ -730,7 +856,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                       _showModal(context);
                                     },
                                     icon: Icon(
-                                      Icons.layers,
+                                      Icons.layers_outlined,
                                       size: 38,
                                       shadows: [
                                         BoxShadow(
@@ -740,7 +866,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                           offset: const Offset(0, 3),
                                         ),
                                       ],
-                                      color: Colors.white,
+                                      color: AppColors.colorWhiteHighEmp,
                                     ),
                                   ),
                                   IconButton(
@@ -749,7 +875,7 @@ class _VideoListScreenState extends State<VideoListScreen> {
                                           _currentVideoIndex]); // Share video
                                     },
                                     icon: Icon(
-                                      Icons.share_rounded,
+                                      Icons.share_outlined,
                                       size: 38,
                                       shadows: [
                                         BoxShadow(

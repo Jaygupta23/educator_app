@@ -66,6 +66,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ? widget.userData['gender']
           : '',
     );
+
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? imagePath = prefs.getString('profileImagePath');
+
+    if (imagePath != null) {
+      setState(() {
+        _imageFile = File(imagePath);
+      });
+    }
   }
 
   @override
@@ -114,11 +127,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImage() async {
-    print("hewllofdojfsjdf");
-    print("mobile: ${_mobileController.text}");
-    print("gender: ${_genderController.text}");
     final ImagePicker picker = ImagePicker();
-
     final XFile? pickedFile =
         await picker.pickImage(source: ImageSource.gallery);
 
@@ -126,6 +135,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       setState(() {
         _imageFile = File(pickedFile.path);
       });
+
+      // Save the image path to SharedPreferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('profileImagePath', pickedFile.path);
     }
   }
 

@@ -1,5 +1,13 @@
+import 'dart:convert';
+import 'dart:ui';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:reelies/screens/walletScreens/AllCheckInTask.dart';
 import 'package:reelies/utils/appColors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:get/get.dart';
 
 class WatchAds extends StatefulWidget {
   const WatchAds({super.key});
@@ -10,59 +18,117 @@ class WatchAds extends StatefulWidget {
 
 class _WatchAdsState extends State<WatchAds> {
   // Variable to keep track of the active button index
-  int _activeCheckInIndex = 0;
+  int _activeCheckInIndex = -1;
+  List<Map<String, dynamic>> checkInTask = [];
+  List<Map<String, dynamic>> last7CheckInTasks = [];
+  String apiKey = dotenv.env['API_KEY'] ?? '';
+  String taskId = '';
+  int points = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCheckInTask();
+  }
+
+  Future<void> UpdatedCheckInTask(id) async {
+    print(": $id");
+    final String url = 'http://192.168.1.48:8000/user/collectCheckIn/';
+    final prefs = await SharedPreferences.getInstance();
+    String? storedUserData = prefs.getString('userData');
+
+    if (storedUserData != null) {
+      // Decode the stored user data from JSON
+      Map<String, dynamic> userData = jsonDecode(storedUserData);
+      String userId = userData['_id'];
+      try {
+        final response = await http.post(
+          Uri.parse(url),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'userId': userId,
+            'taskId': id,
+          }),
+        );
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          points += (data["allocatedPoints"] as num).toInt();
+          await prefs.setInt("point", points);
+
+          setState(() {
+            for (var task in checkInTask) {
+              if (task['taskId'] == id) {
+                task['status'] = 'Completed';
+                break;
+              }
+            }
+            for (var task in last7CheckInTasks) {
+              if (task['taskId'] == id) {
+                task['status'] = 'Completed';
+                break;
+              }
+            }
+          });
+        }
+      } catch (e) {
+        print('Error occurred: $e');
+      }
+    } else {
+      print('User data not found in SharedPreferences');
+    }
+  }
+
+  Future<void> fetchCheckInTask() async {
+    final String url = 'http://$apiKey:8000/user/checkInTask/';
+    final prefs = await SharedPreferences.getInstance();
+    points = prefs.getInt("point") ?? 0;
+    String? storedUserData = prefs.getString('userData');
+
+    if (storedUserData != null) {
+      // Decode the stored user data from JSON
+      Map<String, dynamic> userData = jsonDecode(storedUserData);
+      String userId = userData['_id'];
+      try {
+        final response = await http.post(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'userId': userId,
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          // Parse the JSON data
+          final data = jsonDecode(response.body);
+
+          // Check if data contains checkInTask and is a list
+          if (data['checkInTask'] != null && data['checkInTask'] is List) {
+            setState(() {
+              checkInTask =
+                  List<Map<String, dynamic>>.from(data['checkInTask']);
+              last7CheckInTasks = checkInTask.length > 7
+                  ? checkInTask.sublist(checkInTask.length - 7)
+                  : checkInTask;
+            });
+          } else {
+            print('checkInTask data is not available');
+          }
+        } else {
+          print('Failed to load data. Status code: ${response.statusCode}');
+        }
+      } catch (e) {
+        print('Error occurred: $e');
+      }
+    } else {
+      print('User data not found in SharedPreferences');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     int? activeBuyMintsIndex = -1;
-    // final List<Map<String, dynamic>> rewards = [
-    //   {
-    //     "icon": Icons.live_tv_rounded,
-    //     "reward": "+10",
-    //     "buttonText": "Watch Ad"
-    //   },
-    //   {
-    //     "icon": Icons.live_tv_rounded,
-    //     "reward": "+10",
-    //     "buttonText": "Watch Ad"
-    //   },
-    //   {
-    //     "icon": Icons.live_tv_rounded,
-    //     "reward": "+10",
-    //     "buttonText": "Watch Ad"
-    //   },
-    //   {
-    //     "icon": Icons.live_tv_rounded,
-    //     "reward": "+15",
-    //     "buttonText": "Watch Ad"
-    //   },
-    //   {
-    //     "icon": Icons.live_tv_rounded,
-    //     "reward": "+15",
-    //     "buttonText": "Watch Ad"
-    //   },
-    //   {
-    //     "icon": Icons.live_tv_rounded,
-    //     "reward": "+15",
-    //     "buttonText": "Watch Ad"
-    //   },
-    //   {
-    //     "icon": Icons.live_tv_rounded,
-    //     "reward": "+20",
-    //     "buttonText": "Watch Ad"
-    //   },
-    //   // Add more items here
-    // ];
-
-    final List<Map<String, dynamic>> dailyCheckIn = [
-      {"day": "1", "point": "+10"},
-      {"day": "2", "point": "+15"},
-      {"day": "3", "point": "+20"},
-      {"day": "4", "point": "+25"},
-      {"day": "5", "point": "+30"},
-      {"day": "6", "point": "+35"},
-      {"day": "7", "point": "+40"},
-    ];
 
     final List<Map<String, dynamic>> buyMins = [
       {"mints": "+1 mints", "price": "INR 10"},
@@ -156,7 +222,7 @@ class _WatchAdsState extends State<WatchAds> {
                               Row(
                                 children: [
                                   Text(
-                                    " 60",
+                                    "${points} ",
                                     style: TextStyle(
                                         color: Colors.white, fontSize: 24),
                                   ),
@@ -392,7 +458,7 @@ class _WatchAdsState extends State<WatchAds> {
               SizedBox(height: 30),
               Container(
                 width: double.infinity,
-                height: 235,
+                height: 240,
                 decoration: BoxDecoration(
                     color: Colors.grey.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10)),
@@ -405,22 +471,41 @@ class _WatchAdsState extends State<WatchAds> {
                         padding:
                             EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              " Check In",
-                              style: TextStyle(
+                            Row(
+                              children: [
+                                Text(
+                                  "Daily Check In",
+                                  style: TextStyle(
+                                      color: AppColors.colorWhiteHighEmp,
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                                SizedBox(
+                                  width: 5,
+                                ),
+                                Icon(
+                                  Icons.check_box_rounded,
                                   color: AppColors.colorWhiteHighEmp,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500),
+                                  size: 20,
+                                )
+                              ],
                             ),
-                            SizedBox(
-                              width: 5,
+                            GestureDetector(
+                              onTap: () {
+                                Get.offAll(() =>
+                                    AllCheckInTask(checkInTask: checkInTask));
+                              },
+                              child: Text(
+                                'Show all',
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: AppColors.colorWhiteHighEmp,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
                             ),
-                            Icon(
-                              Icons.check_box_rounded,
-                              color: AppColors.colorWhiteHighEmp,
-                              size: 20,
-                            )
                           ],
                         ),
                       ),
@@ -430,205 +515,183 @@ class _WatchAdsState extends State<WatchAds> {
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                            children:
-                                List.generate(dailyCheckIn.length, (index) {
-                          return Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _activeCheckInIndex = index;
-                                });
-                              },
-                              child: Column(
-                                children: [
-                                  Container(
-                                    width: 80,
-                                    height: 120,
-                                    decoration: BoxDecoration(
-                                      color: _activeCheckInIndex == index
-                                          ? AppColors.colorError
-                                          : AppColors.colorWhiteHighEmp,
-                                      borderRadius: BorderRadius.circular(10),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.4),
-                                          // Shadow color
-                                          offset: Offset(0, 4),
-                                          // Offset of the shadow
-                                          blurRadius: 6,
-                                          // Blur radius of the shadow
-                                          spreadRadius:
-                                              1, // Spread radius of the shadow
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                          children:
+                              List.generate(last7CheckInTasks.length, (index) {
+                            final task = last7CheckInTasks[index];
+                            final task_id = task['taskId'];
+
+                            return Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: GestureDetector(
+                                onTap: task["status"] == 'Pending'
+                                    ? () {
+                                        setState(() {
+                                          _activeCheckInIndex = index;
+                                          taskId = task_id;
+                                        });
+                                        UpdatedCheckInTask(taskId);
+                                      }
+                                    : null,
+                                child: Column(
+                                  children: [
+                                    Stack(
+                                      clipBehavior: Clip.none,
+                                      // Allows the semicircle to overflow the main container boundaries
                                       children: [
-                                        Icon(
-                                          _activeCheckInIndex == index
-                                              ? Icons.lock_open_rounded
-                                              : Icons.lock_rounded,
-                                          size: 20,
-                                          color: _activeCheckInIndex == index
-                                              ? AppColors.colorWhiteHighEmp
-                                              : AppColors.colorError,
+                                        // Main container
+                                        Container(
+                                          width: 120,
+                                          height: 140,
+                                          decoration: BoxDecoration(
+                                            color: _activeCheckInIndex == index
+                                                ? AppColors.colorError
+                                                : AppColors.colorWhiteHighEmp,
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black
+                                                    .withOpacity(0.4),
+                                                offset: Offset(0, 4),
+                                                blurRadius: 6,
+                                                spreadRadius: 1,
+                                              ),
+                                            ],
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              SizedBox(height: 65),
+                                              // Adjust for spacing from the top
+                                              Text(
+                                                'Day ${task["Day"]}',
+                                                style: TextStyle(
+                                                  fontSize: 20,
+                                                  color: _activeCheckInIndex ==
+                                                          index
+                                                      ? AppColors
+                                                          .colorWhiteHighEmp
+                                                      : AppColors
+                                                          .colorPrimaryDark,
+                                                ),
+                                              ),
+                                              SizedBox(height: 20),
+                                              GestureDetector(
+                                                onTap: () {},
+                                                child: Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                      horizontal: 21.8,
+                                                      vertical: 3),
+                                                  decoration: BoxDecoration(
+                                                    color: task["status"] ==
+                                                            'Pending'
+                                                        ? AppColors.colorError
+                                                        : AppColors
+                                                            .colorWhiteHighEmp,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            3),
+                                                  ),
+                                                  child: Text(
+                                                    task["status"] ==
+                                                            'Completed'
+                                                        ? "Collected"
+                                                        : task["status"] ==
+                                                                "Pending"
+                                                            ? "Collect Now"
+                                                            : task["status"] ==
+                                                                    "Missed"
+                                                                ? "Missed"
+                                                                : "Upcoming",
+                                                    style: TextStyle(
+                                                      color: task["status"] ==
+                                                              'Completed'
+                                                          ? AppColors
+                                                              .colorSuccess
+                                                          : task["status"] ==
+                                                                  'Missed'
+                                                              ? AppColors
+                                                                  .colorError
+                                                              : task["status"] ==
+                                                                      'Alloted'
+                                                                  ? Colors.amber[
+                                                                      800]
+                                                                  : AppColors
+                                                                      .colorWhiteHighEmp,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                        SizedBox(height: 10),
-                                        Text(
-                                          dailyCheckIn[index]['point'],
-                                          style: TextStyle(
-                                              fontSize: 20,
-                                              color: _activeCheckInIndex ==
-                                                      index
-                                                  ? AppColors.colorWhiteHighEmp
-                                                  : AppColors.colorPrimaryDark),
-                                        ),
-                                        Image.asset(
-                                          "assets/images/coin.webp",
-                                          width: 30,
-                                          height: 30,
+
+                                        // Red semicircle positioned at the top of the main container
+                                        Positioned(
+                                          top: 0,
+                                          // Control the overlap; adjust to your needs
+                                          left: 5,
+                                          // Positioning to center it horizontally
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.only(
+                                              bottomLeft: Radius.circular(110),
+                                              bottomRight: Radius.circular(110),
+                                            ),
+                                            child: Container(
+                                              width: 110,
+                                              // Width of the semicircle
+                                              height: 50,
+                                              // Height of the semicircle (half of the width for a true semicircle)
+                                              color: Colors.deepPurple[500],
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.start,
+                                                children: [
+                                                  SizedBox(
+                                                    height: 4,
+                                                  ),
+                                                  Text(
+                                                    '+${task["allocatedPoints"]} ',
+                                                    style: TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: AppColors
+                                                          .colorWhiteHighEmp,
+                                                      height: 1,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    'Mints',
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: AppColors
+                                                          .colorWhiteHighEmp,
+                                                      height: 1,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  SizedBox(
-                                    height: 10,
-                                  ),
-                                  Text("Day ${dailyCheckIn[index]["day"]}",
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          color: AppColors.colorWhiteHighEmp)),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        })),
+                            );
+                          }),
+                        ),
                       )
                     ],
                   ),
                 ),
               ),
               SizedBox(height: 30),
-              // Padding(
-              //   padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              //   child: Column(
-              //     crossAxisAlignment: CrossAxisAlignment.start,
-              //     children: [
-              //       Row(
-              //         children: [
-              //           Text(
-              //             "Watch Ads",
-              //             style: TextStyle(
-              //               color: AppColors.colorWhiteHighEmp,
-              //               fontSize: 18,
-              //             ),
-              //           ),
-              //           SizedBox(width: 8),
-              //           Container(
-              //             padding: EdgeInsets.all(2),
-              //             decoration: BoxDecoration(
-              //               color: Colors.grey[800],
-              //               borderRadius: BorderRadius.circular(20),
-              //             ),
-              //             child: Icon(
-              //               Icons.question_mark,
-              //               size: 16,
-              //               color: AppColors.colorWhiteHighEmp,
-              //             ),
-              //           ),
-              //         ],
-              //       ),
-              //       SizedBox(height: 4),
-              //       Text(
-              //         "You can watch up to 7 ads every day",
-              //         style: TextStyle(color: Colors.white54, fontSize: 12),
-              //       ),
-              //       SizedBox(height: 20),
-              //       Container(
-              //         height: MediaQuery.of(context).size.height * 0.64,
-              //         child: Column(
-              //           children: List.generate(rewards.length, (index) {
-              //             return Padding(
-              //               padding: const EdgeInsets.symmetric(vertical: 10.0),
-              //               child: Row(
-              //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              //                 children: [
-              //                   Row(
-              //                     children: [
-              //                       Padding(
-              //                         padding:
-              //                             const EdgeInsets.only(bottom: 8.0),
-              //                         child: Icon(
-              //                           rewards[index]['icon'],
-              //                           size: 30,
-              //                           color: AppColors.colorError,
-              //                         ),
-              //                       ),
-              //                       SizedBox(width: 10),
-              //                       Image.asset(
-              //                         "assets/images/coin.png",
-              //                         width: 25,
-              //                         height: 20,
-              //                       ),
-              //                       Text(
-              //                         rewards[index]['reward'],
-              //                         style: TextStyle(
-              //                           color: AppColors.colorWhiteHighEmp,
-              //                           fontSize: 16,
-              //                           fontWeight: FontWeight.bold,
-              //                         ),
-              //                       ),
-              //                     ],
-              //                   ),
-              //                   ElevatedButton(
-              //                     onPressed: () {
-              //                       setState(() {
-              //                         _activeIndex = index;
-              //                       });
-              //                     },
-              //                     child: Row(
-              //                       children: [
-              //                         Icon(
-              //                           Icons.video_camera_back_outlined,
-              //                           color: Colors.white,
-              //                           size: 18,
-              //                         ),
-              //                         SizedBox(width: 4),
-              //                         Text(
-              //                           rewards[index]['buttonText'],
-              //                           style: TextStyle(
-              //                             color: AppColors.colorWhiteHighEmp,
-              //                             fontSize: 12,
-              //                             fontWeight: FontWeight.w700,
-              //                           ),
-              //                         ),
-              //                       ],
-              //                     ),
-              //                     style: ElevatedButton.styleFrom(
-              //                       backgroundColor: _activeIndex == index
-              //                           ? AppColors.colorError
-              //                           : Colors.grey[900],
-              //                       shape: RoundedRectangleBorder(
-              //                         borderRadius: BorderRadius.circular(5),
-              //                       ),
-              //                       padding:
-              //                           EdgeInsets.symmetric(horizontal: 20),
-              //                       elevation: 5,
-              //                       shadowColor: Colors.black.withOpacity(0.5),
-              //                     ),
-              //                   ),
-              //                 ],
-              //               ),
-              //             );
-              //           }),
-              //         ),
-              //       )
-              //     ],
-              //   ),
-              // ),
             ],
           ),
         ));

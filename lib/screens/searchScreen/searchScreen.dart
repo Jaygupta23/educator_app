@@ -417,7 +417,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                                   child: Image.network(
                                                     item['path'] ?? '',
                                                     // Accessing the 'path' key from the map
-                                                    fit: BoxFit.cover,
+                                                    fit: BoxFit.fill,
                                                     errorBuilder: (context,
                                                         error, stackTrace) {
                                                       return Icon(
@@ -428,7 +428,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                                   ),
                                                 ),
                                               ),
-                                              SizedBox(width: 10.w),
+                                              SizedBox(width: 20.w),
                                               Padding(
                                                 padding: const EdgeInsets.only(
                                                     bottom: 2),
@@ -677,7 +677,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                             // Use network image here
                                             height: 170,
                                             width: double.infinity,
-                                            fit: BoxFit.cover,
+                                            fit: BoxFit.fill,
                                             errorBuilder:
                                                 (context, error, stackTrace) {
                                               return Icon(
@@ -715,11 +715,11 @@ class _SearchScreenState extends State<SearchScreen> {
                                     ),
                                   ),
                                   Positioned(
-                                      top: 125,
-                                      left: 127,
+                                      bottom: 40,
+                                      right: 0,
                                       child: Container(
-                                        height: 22,
-                                        width: 22,
+                                        height: 30,
+                                        width: 30,
                                         decoration: BoxDecoration(
                                             color: AppColors.colorPrimary,
                                             borderRadius:
@@ -731,7 +731,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                               fontWeight: FontWeight.w400,
                                               color:
                                                   AppColors.colorWhiteHighEmp,
-                                              fontSize: 10,
+                                              fontSize: 14,
                                             ),
                                           ),
                                         ),

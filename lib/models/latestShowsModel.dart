@@ -260,7 +260,7 @@ class _LatestShowsModelState extends State<LatestShowsModel> {
                                   borderRadius: BorderRadius.circular(10),
                                   child: Image.network(
                                     thumbnail['fileLocation']!,
-                                    fit: BoxFit.cover,
+                                    fit: BoxFit.fill,
                                     errorBuilder: (context, error, stackTrace) {
                                       return Icon(Icons
                                           .error); // Show error icon if image loading fails

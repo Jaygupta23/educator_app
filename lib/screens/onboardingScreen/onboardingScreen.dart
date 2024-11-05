@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 import 'package:reelies/screens/authScreens/mainSignInScreen.dart';
 
 import '../../models/onboardingModel.dart';
@@ -92,11 +93,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                         child: MaterialButton(
                           onPressed: () {
                             if (currentIndex == contents.length - 1) {
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) =>
-                                          const MainSignInScreen()));
+                              Get.offAll(() => MainSignInScreen());
                             }
                             _controller.nextPage(
                               duration: const Duration(milliseconds: 100),

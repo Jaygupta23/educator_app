@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -27,6 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String apiKey = dotenv.env['API_KEY'] ?? '';
   List<Map<String, dynamic>> userDetails = [];
   bool isLoading = false;
+  File? _imageFile;
 
   @override
   void initState() {
@@ -34,6 +36,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     super.initState();
     fetchUserDetails();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? imagePath = prefs.getString('profileImagePath');
+
+    if (imagePath != null) {
+      setState(() {
+        _imageFile = File(imagePath);
+      });
+    }
   }
 
   Future<void> fetchUserDetails() async {
@@ -100,8 +114,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               children: [
                 SizedBox(height: 10.h),
-                Image.asset('assets/images/profile.png',
-                    height: 100.h, width: 100.w),
+                SizedBox(
+                  height: 86.h,
+                  width: 86.w,
+                  child: CircleAvatar(
+                    backgroundImage: _imageFile != null
+                        ? FileImage(_imageFile!)
+                        : const AssetImage('assets/images/blank.webp')
+                            as ImageProvider,
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.only(left: 16, right: 16),
                   child: isLoading // Show loading indicator while fetching
@@ -547,7 +569,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                               .getInstance();
                                                       await prefs.clear();
                                                       Get.offAll(
-                                                          const MainSignInScreen());
+                                                          MainSignInScreen());
                                                     },
                                                     child: Container(
                                                       height: 45,

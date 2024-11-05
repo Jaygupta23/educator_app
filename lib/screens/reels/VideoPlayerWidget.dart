@@ -342,11 +342,12 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                                     IconButton(
                                       onPressed: _onIconPressed,
                                       icon: Icon(
-                                        Icons.favorite_rounded,
+                                        isLiked
+                                            ? Icons.favorite_rounded
+                                            : Icons.favorite_outline_rounded,
                                         shadows: [
                                           BoxShadow(
-                                            color:
-                                                Colors.black.withOpacity(0.5),
+                                            color: Colors.grey.withOpacity(0.5),
                                             spreadRadius: 2,
                                             blurRadius: 10,
                                             offset: const Offset(0, 3),
@@ -354,8 +355,8 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                                         ],
                                         size: 38,
                                         color: isLiked
-                                            ? Colors.red[400]
-                                            : Colors.white,
+                                            ? AppColors.colorError
+                                            : AppColors.colorWhiteHighEmp,
                                       ),
                                     ),
                                     Transform.translate(
@@ -384,11 +385,13 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                                 child: IconButton(
                                   onPressed: _onStarPressed,
                                   icon: Icon(
-                                    Icons.star_rounded,
+                                    isBookmark
+                                        ? Icons.star_rounded
+                                        : Icons.star_outline_rounded,
                                     size: 38,
                                     shadows: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.5),
+                                        color: Colors.grey.withOpacity(0.5),
                                         spreadRadius: 2,
                                         blurRadius: 10,
                                         offset: const Offset(0, 3),
@@ -396,7 +399,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                                     ],
                                     color: isBookmark
                                         ? Colors.amber[300]
-                                        : Colors.white,
+                                        : AppColors.colorWhiteHighEmp,
                                   ),
                                 ),
                               );
@@ -435,12 +438,12 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                               }
                             },
                             icon: Icon(
-                              Icons.layers,
+                              Icons.layers_outlined,
                               size: 38,
                               color: Colors.white,
                               shadows: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Colors.grey.withOpacity(0.5),
                                   spreadRadius: 2,
                                   blurRadius: 10,
                                   offset: const Offset(0, 3),
@@ -453,12 +456,12 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
                               _shareVideo(widget.videoData['trailerUrl']);
                             },
                             icon: Icon(
-                              Icons.share,
+                              Icons.share_outlined,
                               size: 38,
-                              color: Colors.white,
+                              color: AppColors.colorWhiteHighEmp,
                               shadows: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Colors.grey.withOpacity(0.5),
                                   spreadRadius: 2,
                                   blurRadius: 10,
                                   offset: const Offset(0, 3),

@@ -4,13 +4,31 @@ import 'package:reelies/models/myBottomNavModel.dart';
 import 'package:reelies/screens/authScreens/signInScreen.dart';
 import 'package:reelies/screens/authScreens/signUpScreen.dart';
 import 'package:get/get.dart';
-
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../utils/appColors.dart';
 import '../../utils/constants.dart';
 import '../../utils/myButton.dart';
 
 class MainSignInScreen extends StatelessWidget {
-  const MainSignInScreen({super.key});
+  MainSignInScreen({super.key});
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  Future<void> _handleGoogleSignIn() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser != null) {
+        final userName = googleUser.displayName;
+        final userEmail = googleUser.email;
+        print("User Name: $userName");
+        print("User Email: $userEmail");
+        // You can navigate or save user data as needed here
+        Get.offAll(() => const MyBottomNavModel());
+      }
+    } catch (error) {
+      print("Google Sign-In failed: $error");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +89,7 @@ class MainSignInScreen extends StatelessWidget {
             SizedBox(height: 10.h),
             GestureDetector(
               onTap: () {
-                Get.offAll(() => const MyBottomNavModel());
+                _handleGoogleSignIn();
               },
               child: Container(
                 height: 56.h,

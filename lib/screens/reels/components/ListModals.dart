@@ -62,14 +62,15 @@ class _ListModalsState extends State<ListModals> {
               ),
             ],
           ),
-          Row(
-            children: [
-              Text(
-                "0-${widget.urls.length}",
-                style: TextStyle(color: AppColors.colorWhiteHighEmp),
-              ),
-            ],
-          ),
+          if (widget.urls.length > 1)
+            Row(
+              children: [
+                Text(
+                  "0-${widget.urls.length - 1}",
+                  style: TextStyle(color: AppColors.colorWhiteHighEmp),
+                ),
+              ],
+            ),
           const Divider(
             color: Colors.blueGrey,
             thickness: 1,

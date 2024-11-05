@@ -12,7 +12,6 @@ class VideoScreen extends StatefulWidget {
 }
 
 class _VideoScreenState extends State<VideoScreen> {
-  // List<String> videoUrls = [];
   bool isLoading = false;
   bool isFetchingMore = false;
   var sessionCookie = '';
@@ -38,7 +37,7 @@ class _VideoScreenState extends State<VideoScreen> {
   Future<void> _fetchVideoUrls({bool isLoadMore = false}) async {
     try {
       final response = await http.get(
-        Uri.parse("http://192.168.1.48:8000/user/trendingTrailers"),
+        Uri.parse("http://$apiKey:8000/user/trendingTrailers"),
       );
 
       if (response.statusCode == 200) {

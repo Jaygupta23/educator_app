@@ -120,11 +120,7 @@ class _MostTrendingShowsModelState extends State<MostTrendingShowsModel> {
                 ),
                 InkWell(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const TrendingVideosScreen()),
-                    );
+                    Get.to(() => const TrendingVideosScreen());
                   },
                   child: Text(
                     'Show all',
@@ -214,7 +210,7 @@ class _MostTrendingShowsModelState extends State<MostTrendingShowsModel> {
                           children: [
                             // Use Image.network instead of Image.asset
                             Container(
-                              height: 105.h,
+                              height: 95.h,
                               width: 100.w,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(
@@ -225,7 +221,13 @@ class _MostTrendingShowsModelState extends State<MostTrendingShowsModel> {
                                 // Set the border radius here
                                 child: Image.network(
                                   item['path']!, // This should be the URL
-                                  fit: BoxFit.cover,
+                                  fit: BoxFit.fill,
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Center(
+                                        child: CircularProgressIndicator());
+                                  },
                                   errorBuilder: (context, error, stackTrace) {
                                     return Container(
                                       height: 105.h,

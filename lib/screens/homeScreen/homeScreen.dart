@@ -547,9 +547,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                     'https://via.placeholder.com/150',
                                                                 fit: BoxFit
                                                                     .cover,
-                                                                placeholder: (context,
-                                                                        url) =>
-                                                                    CircularProgressIndicator(),
                                                                 errorWidget: (context,
                                                                         url,
                                                                         error) =>
