@@ -19,6 +19,7 @@ void main() async {
   );
 
   // Ensure that the Flutter framework's binding is initialized
+
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await dotenv.load(fileName: ".env");
