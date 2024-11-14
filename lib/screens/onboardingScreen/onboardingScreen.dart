@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:reelies/screens/authScreens/mainSignInScreen.dart';
+import '../../screens/authScreens/mainSignInScreen.dart';
 
 import '../../models/onboardingModel.dart';
 import '../../utils/appColors.dart';
@@ -33,7 +33,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.colorSecondaryDarkest,
+      backgroundColor: AppColors.colorWhiteMidEmp,
       body: Stack(alignment: Alignment.center, children: [
         PageView.builder(
             controller: _controller,
@@ -49,7 +49,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                 height: MediaQuery.of(context).size.height,
                 decoration: BoxDecoration(
                   image: DecorationImage(
-                    fit: BoxFit.fill,
+                    fit: BoxFit.cover,
                     image: AssetImage(contents[i].image),
                   ),
                 ),
@@ -66,7 +66,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               height: 1.2,
-                              color: Colors.white,
+                              color: AppColors.colorSecondaryDarkest,
                               fontSize: 36.sp,
                               fontWeight: FontWeight.bold),
                         ),
@@ -77,7 +77,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           height: 1.2,
-                          color: AppColors.colorDisabled,
+                          color: AppColors.colorBlackMidEmp,
                           fontSize: 15.sp,
                         ),
                       ),
@@ -88,7 +88,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                         //margin: EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          color: AppColors.colorPrimary,
+                          color: AppColors.colorInfo,
                         ),
                         child: MaterialButton(
                           onPressed: () {
@@ -141,7 +141,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(25),
           color: currentIndex == index
-              ? AppColors.colorPrimary
+              ? AppColors.colorInfo
               : AppColors.colorBlackMidEmp),
     );
   }

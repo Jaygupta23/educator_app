@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:reelies/screens/searchScreen/searchScreen.dart';
+import '../../screens/searchScreen/searchScreen.dart';
 import 'package:get/get.dart';
 
 import '../../utils/appColors.dart';

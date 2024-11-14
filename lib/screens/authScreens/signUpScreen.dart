@@ -126,13 +126,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.colorSecondaryDarkest,
+      backgroundColor: AppColors.colorWhiteMidEmp,
       body: Container(
         height: double.infinity,
         width: double.infinity,
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("assets/images/signUp.png"),
+            image: AssetImage("assets/images/e5.png"),
             fit: BoxFit.cover,
           ),
         ),
@@ -143,7 +143,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: 150.h),
+                SizedBox(height: MediaQuery.of(context).size.height *0.32),
                 Text(
                   createAccount,
                   textAlign: TextAlign.center,
@@ -151,14 +151,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     fontSize: 36.sp,
                     height: 1.2,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.colorWhiteHighEmp,
+                    color: Colors.black,
                   ),
                 ),
                 SizedBox(height: 10.h),
                 Center(
                   child: Container(
                     decoration: BoxDecoration(
-                        color: AppColors.colorGrey,
+                        color: AppColors.colorWhiteLowEmp,
                         borderRadius: BorderRadius.circular(8)),
                     width: 296.w, // width of container
                     child: TextFormField(
@@ -172,16 +172,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                         return null;
                       },
-                      style: const TextStyle(color: AppColors.colorDisabled),
+                      style: const TextStyle(color: AppColors.colorBlackHighEmp),
                       // Style for the text entered in the field
                       decoration: InputDecoration(
                         hintText: 'Enter Nickname',
                         hintStyle:
-                            const TextStyle(color: AppColors.colorDisabled),
+                            const TextStyle(color: AppColors.colorBlackHighEmp),
                         // Style for the hint text
                         prefixIcon: const Icon(
                           Icons.perm_contact_cal_rounded,
-                          color: AppColors.colorDisabled, // Color for the icon
+                          color: AppColors.colorBlackHighEmp, // Color for the icon
                         ),
                         contentPadding:
                             const EdgeInsets.fromLTRB(10, 16, 8, 16),
@@ -190,7 +190,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(
                               8), // Border radius of the input field
                           borderSide: const BorderSide(
-                            color: AppColors.colorGrey,
+                            color: AppColors.colorWhiteLowEmp,
                             width: 1,
                           ),
                         ),
@@ -198,7 +198,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(8),
                           // Border radius of the input field when it is focused
                           borderSide: const BorderSide(
-                            color: AppColors.colorGrey,
+                            color: AppColors.colorWhiteLowEmp,
                             width: 1,
                           ),
                         ),
@@ -228,7 +228,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 Center(
                   child: Container(
                     decoration: BoxDecoration(
-                        color: AppColors.colorGrey,
+                        color: AppColors.colorWhiteLowEmp,
                         borderRadius: BorderRadius.circular(8)),
                     width: 296.w, // width of container
                     child: TextFormField(
@@ -246,16 +246,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         }
                         return null;
                       },
-                      style: const TextStyle(color: AppColors.colorDisabled),
+                      style: const TextStyle(color: AppColors.colorBlackHighEmp),
                       // Style for the text entered in the field
                       decoration: InputDecoration(
                         hintText: 'Email Address',
                         hintStyle:
-                            const TextStyle(color: AppColors.colorDisabled),
+                            const TextStyle(color: AppColors.colorBlackHighEmp),
                         // Style for the hint text
                         prefixIcon: const Icon(
                           Icons.send_rounded,
-                          color: AppColors.colorDisabled, // Color for the icon
+                          color: AppColors.colorBlackHighEmp, // Color for the icon
                         ),
                         contentPadding:
                             const EdgeInsets.fromLTRB(10, 16, 8, 16),
@@ -264,7 +264,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(
                               8), // Border radius of the input field
                           borderSide: const BorderSide(
-                            color: AppColors.colorGrey,
+                            color: AppColors.colorWhiteMidEmp,
                             width: 1,
                           ),
                         ),
@@ -272,7 +272,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(8),
                           // Border radius of the input field when it is focused
                           borderSide: const BorderSide(
-                            color: AppColors.colorGrey,
+                            color: AppColors.colorWhiteMidEmp,
                             width: 1,
                           ),
                         ),
@@ -304,7 +304,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     width: 296.w, // width of the container
                     decoration: BoxDecoration(
                         color: AppColors
-                            .colorGrey, // background color of the container
+                            .colorWhiteLowEmp, // background color of the container
                         borderRadius: BorderRadius.circular(
                             8)), // rounded corners of the container
                     child: TextFormField(
@@ -325,18 +325,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         }
                         return null;
                       },
-                      style: const TextStyle(color: AppColors.colorDisabled),
+                      style: const TextStyle(color: AppColors.colorBlackHighEmp),
                       // text style of the entered text
                       decoration: InputDecoration(
                         prefixIcon: const Icon(
                           Icons.lock,
                           color:
-                              AppColors.colorDisabled, // color of the lock icon
+                              AppColors.colorBlackHighEmp, // color of the lock icon
                         ),
                         hintText: 'Enter Password',
                         // hint text for the TextFormField
                         hintStyle:
-                            const TextStyle(color: AppColors.colorDisabled),
+                            const TextStyle(color: AppColors.colorBlackHighEmp),
                         // style for the hint text
                         suffixIcon: GestureDetector(
                           onTap: () {
@@ -347,10 +347,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           },
                           child: obscureText
                               ? const Icon(Icons.visibility_off,
-                                  color: AppColors.colorPrimary,
+                                  color: AppColors.colorInfo,
                                   size: 20) // eye icon to hide the password
                               : const Icon(Icons.visibility_outlined,
-                                  color: AppColors.colorPrimary,
+                                  color: AppColors.colorInfo,
                                   size: 20), // eye icon to show the password
                         ),
                         contentPadding:
@@ -361,7 +361,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               8), // rounded corners of the enabled border
                           borderSide: const BorderSide(
                             color: AppColors
-                                .colorGrey, // color of the enabled border
+                                .colorWhiteMidEmp, // color of the enabled border
                             width: 1, // width of the enabled border
                           ),
                         ),
@@ -370,7 +370,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               8), // rounded corners of the focused border
                           borderSide: const BorderSide(
                             color: AppColors
-                                .colorGrey, // color of the focused border
+                                .colorWhiteMidEmp, // color of the focused border
                             width: 1, // width of the focused border
                           ),
                         ),
@@ -401,7 +401,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   child: Container(
                     width: 296.w,
                     decoration: BoxDecoration(
-                        color: AppColors.colorGrey,
+                        color: AppColors.colorWhiteLowEmp,
                         borderRadius: BorderRadius.circular(8)),
                     child: TextFormField(
                       keyboardType: TextInputType.visiblePassword,
@@ -418,17 +418,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         }
                         return null;
                       },
-                      style: const TextStyle(color: AppColors.colorDisabled),
+                      style: const TextStyle(color: AppColors.colorBlackHighEmp),
                       decoration: InputDecoration(
                         // Icon shown to the left of the input field
                         prefixIcon: const Icon(
                           Icons.lock,
-                          color: AppColors.colorDisabled,
+                          color: AppColors.colorBlackHighEmp,
                         ),
                         // Hint text displayed in the input field
                         hintText: 'Confirm Password',
                         hintStyle:
-                            const TextStyle(color: AppColors.colorDisabled),
+                            const TextStyle(color: AppColors.colorBlackHighEmp),
                         // Icon shown to the right of the input field
                         suffixIcon: GestureDetector(
                           onTap: () {
@@ -438,9 +438,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           },
                           child: obscureText2
                               ? const Icon(Icons.visibility_off,
-                                  color: AppColors.colorPrimary, size: 20)
+                                  color: AppColors.colorInfo, size: 20)
                               : const Icon(Icons.visibility_outlined,
-                                  color: AppColors.colorPrimary, size: 20),
+                                  color: AppColors.colorInfo, size: 20),
                         ),
                         // Padding inside the input field
                         contentPadding:
@@ -449,7 +449,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(
-                            color: AppColors.colorGrey,
+                            color: AppColors.colorWhiteMidEmp,
                             width: 1,
                           ),
                         ),
@@ -457,7 +457,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(
-                            color: AppColors.colorGrey,
+                            color: AppColors.colorWhiteMidEmp,
                             width: 1,
                           ),
                         ),
@@ -465,7 +465,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(
-                            color: AppColors.colorPrimaryDark,
+                            color: AppColors.colorError,
                             width: 1,
                           ),
                         ),
@@ -495,21 +495,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           // Navigate to the MyBottomNavModel screen
                         }
                       },
-                      text: isLoading ? "" : "CREATE ACCOUNT"),
+                      text: isLoading ? "" : "Create account"),
                 ),
                 SizedBox(height: 5.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Displays a horizontal line image
-                    Image.asset('assets/images/Line 1.png',
+                    Image.asset('assets/images/Line 2.png',
                         height: 40.h, width: 70.w),
                     SizedBox(width: 10.w),
                     // Displays text
                     Text(continueWith,
                         style: TextStyle(
                           fontSize: 12.sp,
-                          color: AppColors.colorWhiteHighEmp,
+                          color: AppColors.colorBlackHighEmp,
                         )),
                     SizedBox(width: 10.w),
                     // Displays another horizontal line image
@@ -526,7 +526,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     // Displays a Facebook icon which the user can tap to sign up/in with Facebook
                     GestureDetector(
                       onTap: () {
-                        Get.offAll(const MyBottomNavModel());
+                        // Get.offAll(const MyBottomNavModel());
                       },
                       child: Image.asset('assets/images/facebook.png',
                           height: 32.h, width: 32.w),
@@ -535,7 +535,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     // Displays a Google icon which the user can tap to sign up/in with Google
                     GestureDetector(
                       onTap: () {
-                        Get.offAll(const MyBottomNavModel());
+                        // Get.offAll(const MyBottomNavModel());
                       },
                       child: Image.asset('assets/images/google.png',
                           height: 40.h, width: 40.w),
@@ -543,7 +543,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     // Displays an Apple icon which the user can tap to sign up/in with Apple
                     GestureDetector(
                       onTap: () {
-                        Get.offAll(const MyBottomNavModel());
+                        // Get.offAll(const MyBottomNavModel());
                       },
                       child: Image.asset('assets/images/apple.png',
                           height: 50.h, width: 45.w),
@@ -559,7 +559,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       haveAccount,
                       style: TextStyle(
                         fontSize: 16.sp,
-                        color: AppColors.colorWhiteHighEmp,
+                        color: AppColors.colorBlackLowEmp,
                       ),
                     ),
                     SizedBox(width: 5.w),
@@ -572,7 +572,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         signIn,
                         style: TextStyle(
                             fontSize: 16.sp,
-                            color: AppColors.colorPrimary,
+                            color: AppColors.colorInfo,
                             fontWeight: FontWeight.bold),
                       ),
                     ),

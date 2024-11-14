@@ -51,7 +51,7 @@ class _RememberMeModelState extends State<RememberMeModel> {
             "Remember me",
             style: TextStyle(
               fontSize: 14.sp,
-              color: AppColors.colorWhiteHighEmp,
+              color: AppColors.colorBlackHighEmp,
             ),
           ),
         )

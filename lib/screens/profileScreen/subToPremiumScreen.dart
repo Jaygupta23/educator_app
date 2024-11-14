@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:reelies/screens/profileScreen/paymentMethodScreen.dart';
+import '../../screens/profileScreen/paymentMethodScreen.dart';
 import 'package:get/get.dart';
 
 import '../../utils/appColors.dart';

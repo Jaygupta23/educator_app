@@ -1,9 +1,9 @@
-const String appName = "Reelies";
+const String appName = "Edureelies";
 const String loginTitle = "Login to your \n account";
 const String forgotPassword = "Forget the password?";
 const String continueWith = "OR CONTINUE WITH";
-const String signUp = "Sign Up";
-const String createAccount = "Create your \n account";
+const String signUp = "Sign up";
+const String createAccount = "Create  account";
 const String haveAccount = "Have an account?";
 const String signIn = "Sign In";
 const String dontHaveAccount = "Don't have an account?";

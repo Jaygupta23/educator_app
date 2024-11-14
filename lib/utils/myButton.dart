@@ -27,7 +27,7 @@ class _MyButtonState extends State<MyButton> {
       padding: const EdgeInsets.symmetric(horizontal: 0),
       child: Ink(
         decoration: BoxDecoration(
-          color: AppColors.colorPrimary,
+          color: AppColors.colorInfo,
           borderRadius: BorderRadius.circular(12),
         ),
         child: SizedBox(
@@ -36,7 +36,7 @@ class _MyButtonState extends State<MyButton> {
           child: Center(
               child: widget.text == ""
                   ? CircularProgressIndicator(
-                      color: AppColors.colorWhiteHighEmp,
+                      color: AppColors.colorSecondaryDarkest,
                     )
                   : Text(
                       widget.text,

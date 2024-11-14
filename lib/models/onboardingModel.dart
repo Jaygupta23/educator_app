@@ -9,15 +9,15 @@ class UnbordingContent {
 
 List<UnbordingContent> contents = [
   UnbordingContent(
-      image: 'assets/images/onBoard1.png',
-      title: 'Unlimited\nmovies, TV\nshows & more',
-      discription: "Watch Reelies anywhere. Cancel at any\ntime"),
+      image: 'assets/images/e3.png',
+      title: 'Unlimited\ncourses, shorts\nlearning & more',
+      discription: "Watch Edureelies anywhere. Cancel at any\ntime"),
   UnbordingContent(
-      image: 'assets/images/onBoard2.png',
-      title: 'Watch movies\n TV, Virtual\nReality',
-      discription: "Watch Reelies anywhere. Cancel at any\ntime "),
+      image: 'assets/images/e2.png',
+      title: 'Watch shorts\n new thoughts, ideas\ncreativity',
+      discription: "Watch Edreelies anywhere. Cancel at any\ntime "),
   UnbordingContent(
-      image: 'assets/images/onBoard3.png',
-      title: 'Watch movies\n TV, Virtual\nReality',
-      discription: "Watch Reelies anywhere. Cancel at any\ntime"),
+      image: 'assets/images/e4.png',
+      title: 'Watch shorts\n new thoughts, ideas\ncreativity',
+      discription: "Watch Edureelies anywhere. Cancel at any\ntime"),
 ];

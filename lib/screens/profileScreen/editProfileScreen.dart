@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:reelies/models/myBottomNavModel.dart';
+import '../../models/myBottomNavModel.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl_phone_field/intl_phone_field.dart';

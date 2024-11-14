@@ -1,4 +1,4 @@
-# funflix_netro
+# edureelies
 
 A new Flutter project.
 

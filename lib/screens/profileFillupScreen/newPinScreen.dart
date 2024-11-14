@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:reelies/screens/profileFillupScreen/fingerPrintScreen.dart';
+import '../../screens/profileFillupScreen/fingerPrintScreen.dart';
 import 'package:get/get.dart';
 
 import '../../utils/appColors.dart';

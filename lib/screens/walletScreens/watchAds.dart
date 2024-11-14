@@ -4,8 +4,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:reelies/screens/walletScreens/AllCheckInTask.dart';
-import 'package:reelies/utils/appColors.dart';
+import '../../screens/walletScreens/AllCheckInTask.dart';
+import '../../utils/appColors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:get/get.dart';
 

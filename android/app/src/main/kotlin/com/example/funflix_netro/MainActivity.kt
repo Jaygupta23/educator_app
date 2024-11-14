@@ -1,4 +1,4 @@
-package com.reelies
+package com.edureelies
 
 import io.flutter.embedding.android.FlutterActivity
 

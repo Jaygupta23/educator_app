@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:reelies/models/myBottomNavModel.dart';
+import '../..'
+    '/models/myBottomNavModel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/appColors.dart';
 import 'onboardingScreen.dart';
@@ -71,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.colorSecondaryDarkest,
+      backgroundColor: AppColors.colorWhiteHighEmp,
       body: SizedBox(
         width: double.infinity,
         child: Column(
@@ -85,7 +86,7 @@ class _SplashScreenState extends State<SplashScreen>
                   child: ScaleTransition(
                     scale: _scaleAnimation,
                     child: Center(
-                      child: Image.asset('assets/images/logo.png',
+                      child: Image.asset('assets/images/logo_dark.png',
                           width: 600.w, height: 350.h),
                     ),
                   ),

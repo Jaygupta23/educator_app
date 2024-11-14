@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:reelies/models/myBottomNavModel.dart';
-import 'package:reelies/models/rememberMeModel.dart';
-import 'package:reelies/screens/authScreens/signUpScreen.dart';
+import '../../models/myBottomNavModel.dart';
+import '../../models/rememberMeModel.dart';
+import '../../screens/authScreens/signUpScreen.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-import 'package:reelies/screens/onboardingScreen/genreScreen.dart';
+import '../../screens/onboardingScreen/genreScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/appColors.dart';
 import '../../utils/constants.dart';
@@ -140,13 +140,13 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.colorSecondaryDarkest,
+      backgroundColor: AppColors.colorWhiteMidEmp,
       body: Container(
         height: double.infinity,
         width: double.infinity,
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("assets/images/signIn.png"),
+            image: AssetImage("assets/images/e4.png"),
             fit: BoxFit.cover,
           ),
         ),
@@ -157,7 +157,7 @@ class _SignInScreenState extends State<SignInScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: 220.h),
+                SizedBox(height: MediaQuery.of(context).size.height *0.4),
                 Text(
                   loginTitle,
                   textAlign: TextAlign.center,
@@ -165,14 +165,14 @@ class _SignInScreenState extends State<SignInScreen> {
                     fontSize: 36.sp,
                     height: 1.2,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.colorWhiteHighEmp,
+                    color: AppColors.colorSecondaryDarkest,
                   ),
                 ),
                 SizedBox(height: 10.h),
                 Center(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColors.colorGrey,
+                      color: AppColors.colorWhiteLowEmp,
                       // sets the background color of the container
                       borderRadius: BorderRadius.circular(
                           8), // sets the border radius of the container
@@ -197,17 +197,17 @@ class _SignInScreenState extends State<SignInScreen> {
                         }
                         return null;
                       },
-                      style: const TextStyle(color: AppColors.colorDisabled),
+                      style: const TextStyle(color: AppColors.colorBlackHighEmp),
                       // sets the text style for the text input field
                       decoration: InputDecoration(
                         hintText: 'Email Address',
                         // sets the hint text for the text input field
                         hintStyle:
-                            const TextStyle(color: AppColors.colorDisabled),
+                            const TextStyle(color: AppColors.colorBlackHighEmp),
                         // sets the hint text style for the text input field
                         prefixIcon: const Icon(
                           Icons.send_rounded,
-                          color: AppColors.colorDisabled,
+                          color: AppColors.colorBlackHighEmp,
                         ),
                         // sets the prefix icon for the text input field
                         contentPadding:
@@ -217,7 +217,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           // sets the border for the enabled state of the text input field
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(
-                            color: AppColors.colorGrey,
+                            color: AppColors.colorWhiteLowEmp,
                             width: 1,
                           ),
                         ),
@@ -225,7 +225,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           // sets the border for the focused state of the text input field
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(
-                            color: AppColors.colorGrey,
+                            color: AppColors.colorWhiteLowEmp,
                             width: 1,
                           ),
                         ),
@@ -256,7 +256,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     width: 296.w,
                     // Set the background color of the container to grey with 8px rounded corners
                     decoration: BoxDecoration(
-                        color: AppColors.colorGrey,
+                        color: AppColors.colorWhiteLowEmp,
                         borderRadius: BorderRadius.circular(8)),
                     child: TextFormField(
                       // If obscureText is true, hide the text being entered (for passwords)
@@ -273,19 +273,19 @@ class _SignInScreenState extends State<SignInScreen> {
                         return null;
                       },
                       // Set the style of the text being entered to disabled color
-                      style: const TextStyle(color: AppColors.colorDisabled),
+                      style: const TextStyle(color: AppColors.colorBlackHighEmp),
                       // Customize the appearance of the text field
                       decoration: InputDecoration(
                         // Add an icon to the left of the input field
                         prefixIcon: const Icon(
                           Icons.lock,
-                          color: AppColors.colorDisabled,
+                          color: AppColors.colorBlackHighEmp,
                         ),
                         // Add placeholder text to the input field
                         hintText: 'Password',
                         // Set the style of the placeholder text to disabled color
                         hintStyle:
-                            const TextStyle(color: AppColors.colorDisabled),
+                            const TextStyle(color: AppColors.colorBlackHighEmp),
                         // Add a visibility toggle icon to the right of the input field
                         suffixIcon: GestureDetector(
                           onTap: () {
@@ -296,9 +296,9 @@ class _SignInScreenState extends State<SignInScreen> {
                           },
                           child: obscureText
                               ? const Icon(Icons.visibility_off,
-                                  color: AppColors.colorPrimary, size: 20)
+                                  color: AppColors.colorInfo, size: 20)
                               : const Icon(Icons.visibility_outlined,
-                                  color: AppColors.colorPrimary, size: 20),
+                                  color: AppColors.colorInfo, size: 20),
                         ),
                         // Add padding to the content of the input field
                         contentPadding:
@@ -307,7 +307,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(
-                            color: AppColors.colorGrey,
+                            color: AppColors.colorWhiteLowEmp,
                             width: 1,
                           ),
                         ),
@@ -315,7 +315,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: const BorderSide(
-                            color: AppColors.colorGrey,
+                            color: AppColors.colorWhiteLowEmp,
                             width: 1,
                           ),
                         ),
@@ -339,7 +339,9 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                   ),
                 ),
+                SizedBox(height: 10.h,),
                 const RememberMeModel(),
+                SizedBox(height: 10.h,),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 30),
                   child: MyButton(
@@ -350,7 +352,7 @@ class _SignInScreenState extends State<SignInScreen> {
                           await SignInUser();
                         }
                       },
-                      text: isLoading ? "" : "LOGIN"),
+                      text: isLoading ? "" : "Login"),
                 ),
                 SizedBox(height: 5.h),
                 InkWell(
@@ -362,7 +364,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: AppColors.colorPrimary,
+                      color: AppColors.colorInfo,
                     ),
                   ),
                 ),
@@ -371,14 +373,14 @@ class _SignInScreenState extends State<SignInScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // first row with decorative elements
-                    Image.asset('assets/images/Line 1.png',
+                    Image.asset('assets/images/Line 2.png',
                         width: 70.w), // image asset with a fixed width
                     SizedBox(width: 10.w), // empty space between the two images
                     Text(continueWith, // text displayed in the center
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: AppColors
-                              .colorWhiteHighEmp, // white color defined elsewhere
+                              .colorBlackHighEmp, // white color defined elsewhere
                         )),
                     SizedBox(width: 10.w), // another empty space
                     Image.asset('assets/images/Line 2.png',
@@ -391,8 +393,8 @@ class _SignInScreenState extends State<SignInScreen> {
                     // second row with social media login buttons
                     GestureDetector(
                       onTap: () {
-                        Get.offAll(
-                            const MyBottomNavModel()); // navigation function to another screen
+                      //   Get.offAll(
+                      //       const MyBottomNavModel()); // navigation function to another screen
                       },
                       child: Image.asset('assets/images/facebook.png',
                           height: 32.h,
@@ -402,7 +404,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     SizedBox(width: 10.w), // empty space between the images
                     GestureDetector(
                       onTap: () {
-                        Get.offAll(const MyBottomNavModel());
+                        // Get.offAll(const MyBottomNavModel());
                       },
                       child: Image.asset('assets/images/google.png',
                           height: 40.h,
@@ -411,7 +413,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        Get.offAll(const MyBottomNavModel());
+                        // Get.offAll(const MyBottomNavModel());
                       },
                       child: Image.asset('assets/images/apple.png',
                           height: 50.h,
@@ -429,7 +431,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       style: TextStyle(
                         fontSize: 16.sp,
                         color: AppColors
-                            .colorWhiteHighEmp, // white color defined elsewhere
+                            .colorBlackLowEmp, // white color defined elsewhere
                       ),
                     ),
                     SizedBox(width: 5.w),
@@ -443,7 +445,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         signUp,
                         style: TextStyle(
                             fontSize: 16.sp,
-                            color: AppColors.colorPrimary,
+                            color: AppColors.colorInfo,
                             // primary color defined elsewhere
                             fontWeight: FontWeight.bold), // bold font weight
                       ),

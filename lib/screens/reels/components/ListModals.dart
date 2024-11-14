@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:reelies/utils/appColors.dart';
+import '../../../utils/appColors.dart';
 
 class ListModals extends StatefulWidget {
   final List<String> urls;

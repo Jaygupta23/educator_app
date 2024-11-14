@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get.dart';
+
 import 'package:http/http.dart' as http; // Import the http package
-import 'package:reelies/screens/searchScreen/searchErrorScreen.dart';
+import '../../screens/searchScreen/searchErrorScreen.dart';
 import '../../utils/appColors.dart';
-import '../reels/VideoListScreen.dart';
+
 
 class SearchListScreen extends StatefulWidget {
   const SearchListScreen({super.key});

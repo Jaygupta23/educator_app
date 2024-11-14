@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:reelies/screens/profileScreen/paymentGatewayScreen.dart';
-import 'package:reelies/utils/myButton.dart';
+import '../../screens/profileScreen/paymentGatewayScreen.dart';
+import '../../utils/myButton.dart';
 import 'package:get/get.dart';
 
 import '../../utils/appColors.dart';

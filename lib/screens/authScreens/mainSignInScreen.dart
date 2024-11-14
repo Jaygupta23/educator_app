@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:reelies/models/myBottomNavModel.dart';
-import 'package:reelies/screens/authScreens/signInScreen.dart';
-import 'package:reelies/screens/authScreens/signUpScreen.dart';
+import '../../../models/myBottomNavModel.dart';
+import '../../screens/authScreens/signInScreen.dart';
+import '../../screens/authScreens/signUpScreen.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../utils/appColors.dart';
@@ -33,13 +33,13 @@ class MainSignInScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.colorSecondaryDarkest,
+      backgroundColor: AppColors.colorWhiteHighEmp,
       body: Container(
         height: double.infinity,
         width: MediaQuery.of(context).size.width,
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("assets/images/onBoard3.png"),
+            image: AssetImage("assets/images/e3.png"),
             fit: BoxFit.cover,
           ),
         ),
@@ -47,13 +47,13 @@ class MainSignInScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 230.h),
+            SizedBox(height: MediaQuery.of(context).size.height *0.3),
             Text(
               "Let's you in",
               style: TextStyle(
                 fontSize: 36.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.colorWhiteHighEmp,
+                color: AppColors.colorSecondaryDarkest,
               ),
             ),
             SizedBox(height: 10.h),
@@ -79,7 +79,7 @@ class MainSignInScreen extends StatelessWidget {
                       "Continue with Facebook",
                       style: TextStyle(
                         fontSize: 16.sp,
-                        color: AppColors.colorWhiteHighEmp,
+                        color: AppColors.colorSecondaryDarkest,
                       ),
                     ),
                   ],
@@ -106,10 +106,10 @@ class MainSignInScreen extends StatelessWidget {
                         height: 30.h, width: 30.w),
                     SizedBox(width: 5.w),
                     Text(
-                      "Continue with Google",
+                      "Continue with Google ID",
                       style: TextStyle(
                         fontSize: 16.sp,
-                        color: AppColors.colorWhiteHighEmp,
+                        color: AppColors.colorSecondaryDarkest,
                       ),
                     ),
                   ],
@@ -136,10 +136,10 @@ class MainSignInScreen extends StatelessWidget {
                         height: 40.h, width: 36.w),
                     SizedBox(width: 2.w),
                     Text(
-                      "Continue with Apple ID",
+                      "Continue  with Apple ID",
                       style: TextStyle(
                         fontSize: 16.sp,
-                        color: AppColors.colorWhiteHighEmp,
+                        color: AppColors.colorSecondaryDarkest,
                       ),
                     ),
                   ],
@@ -150,14 +150,14 @@ class MainSignInScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('assets/images/Line 1.png',
+                Image.asset('assets/images/Line 2.png',
                     height: 40.h, width: 130.w),
                 SizedBox(width: 10.w),
                 Text(
                   "or",
                   style: TextStyle(
                       fontSize: 16.sp,
-                      color: AppColors.colorWhiteHighEmp,
+                      color: AppColors.colorSecondaryDarkest,
                       fontWeight: FontWeight.bold),
                 ),
                 SizedBox(width: 10.w),
@@ -171,7 +171,7 @@ class MainSignInScreen extends StatelessWidget {
                   onPressed: () {
                     Get.offAll(() => const SignInScreen());
                   },
-                  text: "SIGN IN WITH PASSWORD"),
+                  text: "Sign in with Password"),
             ),
             SizedBox(height: 30.h),
             Row(
@@ -181,7 +181,7 @@ class MainSignInScreen extends StatelessWidget {
                   dontHaveAccount,
                   style: TextStyle(
                     fontSize: 16.sp,
-                    color: AppColors.colorWhiteHighEmp,
+                    color: AppColors.colorSecondaryDarkest,
                   ),
                 ),
                 SizedBox(width: 5.w),
@@ -193,7 +193,7 @@ class MainSignInScreen extends StatelessWidget {
                     "Sign Up",
                     style: TextStyle(
                         fontSize: 16.sp,
-                        color: AppColors.colorPrimary,
+                        color: AppColors.colorInfo,
                         fontWeight: FontWeight.bold),
                   ),
                 ),

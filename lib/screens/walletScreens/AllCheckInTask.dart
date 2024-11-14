@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
-import 'package:reelies/models/myBottomNavModel.dart';
-import 'package:reelies/screens/walletScreens/watchAds.dart';
+import '../../models/myBottomNavModel.dart';
+import '../../screens/walletScreens/watchAds.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/appColors.dart';
 

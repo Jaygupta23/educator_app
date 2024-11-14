@@ -1,10 +1,10 @@
 // Import necessary packages and screens
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:reelies/screens/homeScreen/homeScreen.dart';
-import 'package:reelies/screens/reels/VideoScreen.dart';
+import '../../screens/homeScreen/homeScreen.dart';
+import '../../screens/reels/VideoScreen.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:reelies/screens/walletScreens/watchAds.dart';
+import '../../screens/walletScreens/watchAds.dart';
 import '../screens/profileScreen/profileScreen.dart';
 import '../screens/searchScreen/searchScreen.dart';
 import '../utils/appColors.dart';

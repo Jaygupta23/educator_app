@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-import 'package:reelies/screens/reels/VideoListScreen.dart';
+import '../../screens/reels/VideoListScreen.dart';
 import '../screens/homeScreen/trendingVideosScreen.dart';
 import '../utils/appColors.dart';
 import '../utils/constants.dart';
